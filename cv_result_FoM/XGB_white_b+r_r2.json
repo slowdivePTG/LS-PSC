@@ -1,0 +1,66 @@
+{
+    "model": "white_b+r",
+    "res": {
+        "classifier": "WeightedXGBoost",
+        "scoring": "FoM",
+        "accuracy": [
+            0.9700419661777537,
+            0.9697095608094071,
+            0.9707483275854905,
+            0.9695018074541903,
+            0.9703114287495066
+        ],
+        "FoM": [
+            0.7019391908067991,
+            0.7026574096241321,
+            0.7158927716610819,
+            0.700813786500718,
+            0.7093607852525736
+        ],
+        "ROC_AUC": [
+            0.9666701449028017,
+            0.9671341324170108,
+            0.9673096112780172,
+            0.9669395667480876,
+            0.966408820730104
+        ],
+        "best_params": [
+            {
+                "min_child_weight": 10
+            },
+            {
+                "min_child_weight": 12
+            },
+            {
+                "min_child_weight": 6
+            },
+            {
+                "min_child_weight": 12
+            },
+            {
+                "min_child_weight": 4
+            }
+        ]
+    },
+    "param": {
+        "n_estimators": 500,
+        "eta": 0.05,
+        "max_depth": 10,
+        "min_child_weight": 6,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "gamma": 0.1,
+        "reg_alpha": 0,
+        "reg_lambda": 0,
+        "weight": 0.3
+    },
+    "param_grid": {
+        "min_child_weight": [
+            4,
+            6,
+            8,
+            10,
+            12
+        ]
+    }
+}

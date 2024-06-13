@@ -1,0 +1,66 @@
+{
+    "model": "apphot",
+    "res": {
+        "classifier": "XGBoost",
+        "scoring": "FoM",
+        "accuracy": [
+            0.9723064777496156,
+            0.9731582665060041,
+            0.9724519050982673,
+            0.9735737732164375,
+            0.9724721085326076
+        ],
+        "FoM": [
+            0.7313861623174527,
+            0.741441225760115,
+            0.7371948300622307,
+            0.7470081378650072,
+            0.7361742877663395
+        ],
+        "ROC_AUC": [
+            0.9767469175931826,
+            0.975247969198183,
+            0.975650843410537,
+            0.9761920903017122,
+            0.9758926336613672
+        ],
+        "best_params": [
+            {
+                "min_child_weight": 6
+            },
+            {
+                "min_child_weight": 8
+            },
+            {
+                "min_child_weight": 6
+            },
+            {
+                "min_child_weight": 8
+            },
+            {
+                "min_child_weight": 4
+            }
+        ]
+    },
+    "param": {
+        "n_estimators": 500,
+        "eta": 0.05,
+        "max_depth": 8,
+        "min_child_weight": 6,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "gamma": 0.1,
+        "reg_alpha": 0,
+        "reg_lambda": 0
+    },
+    "param_grid": {
+        "min_child_weight": [
+            4,
+            6,
+            8,
+            10,
+            12
+        ]
+    },
+    "filters": "grz"
+}

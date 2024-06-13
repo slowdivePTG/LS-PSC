@@ -1,0 +1,70 @@
+{
+    "model": "white_b+r",
+    "res": {
+        "classifier": "WeightedXGBoost",
+        "scoring": "FoM",
+        "accuracy": [
+            0.9697095608094071,
+            0.9700004155067105,
+            0.9705405742302738,
+            0.9699588648356671,
+            0.9702698772152162
+        ],
+        "FoM": [
+            0.7050514723485756,
+            0.7069667225281302,
+            0.713738630923887,
+            0.7046433700335089,
+            0.7107972228872397
+        ],
+        "ROC_AUC": [
+            0.9667009169172548,
+            0.9667199356560991,
+            0.9672814378415145,
+            0.9662496115942741,
+            0.9665415900153751
+        ],
+        "best_params": [
+            {
+                "colsample_bytree": 0.9,
+                "subsample": 0.9
+            },
+            {
+                "colsample_bytree": 0.9,
+                "subsample": 0.9
+            },
+            {
+                "colsample_bytree": 0.9,
+                "subsample": 0.9
+            },
+            {
+                "colsample_bytree": 0.9,
+                "subsample": 0.9
+            },
+            {
+                "colsample_bytree": 0.9,
+                "subsample": 0.9
+            }
+        ]
+    },
+    "param": {
+        "n_estimators": 500,
+        "eta": 0.05,
+        "max_depth": 10,
+        "min_child_weight": 6,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "gamma": 0.1,
+        "reg_alpha": 0,
+        "reg_lambda": 0,
+        "weight": 0.3
+    },
+    "param_grid": {
+        "subsample": [
+            0.9
+        ],
+        "colsample_bytree": [
+            0.9
+        ]
+    }
+}

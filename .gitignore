@@ -159,6 +159,7 @@ COSMOS_ACS_catalog/
 *.fits
 
 # Jupyter notebooks (temporarily)
+*comparison*.ipynb
 *Missing*.ipynb
 *SDSS*.ipynb
 *Gaia*.ipynb

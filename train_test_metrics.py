@@ -21,11 +21,25 @@ plt.rcParams.update(
     }
 )
 
+color_s = "#fc8d62"
+color_g = "#8da0cb"
+
+color_model = dict(grz="#984ea3", white="#377eb8", White="#377eb8", hybrid="#4daf4a", Hybrid="#4daf4a", LS="black")
+
+label_model = dict(
+    grz=r"$grz$",
+    white=r"$\mathrm{White}$",
+    White=r"$\mathrm{White}$",
+    hybrid=r"$\mathrm{Hybrid}$",
+    Hybrid=r"$\mathrm{Hybrid}$",
+    LS=r"$\mathrm{LS}$",
+)
+
 
 def score_hist(dataset, models, idx=[], snr_lim=2.5):
-    '''
+    """
     histogram of score distribution
-    '''
+    """
     if len(idx) == 0:
         idx = np.array([True] * len(dataset.ds))
     y_true = dataset.y_true[idx]
@@ -44,9 +58,9 @@ def score_hist(dataset, models, idx=[], snr_lim=2.5):
 
     for j, b in enumerate(bins):
         if j == 0:
-            arg = ds.snr > 10 ** (b - 0.25) # highest S/N
+            arg = ds.snr > 10 ** (b - 0.25)  # highest S/N
         else:
-            arg = np.abs(np.log10(ds.snr) - b) < 0.25 # binned S/N
+            arg = np.abs(np.log10(ds.snr) - b) < 0.25  # binned S/N
         print(f"Star: {(y_true & arg).sum()}; Galaxy: {(~y_true & arg).sum()}")
 
         for k, p in enumerate([dataset.pred[model][idx] for model in models]):
@@ -54,7 +68,7 @@ def score_hist(dataset, models, idx=[], snr_lim=2.5):
                 p[y_true & arg],
                 histtype="step",
                 label="S (log(S/N):{:.1f}-{:.1f})".format(b - 0.25, b + 0.25),
-                color="#8da0cb",
+                color=color_s,
                 bins=50,
                 range=([0, 1]),
                 log=True,
@@ -63,7 +77,7 @@ def score_hist(dataset, models, idx=[], snr_lim=2.5):
                 p[~y_true & arg],
                 histtype="step",
                 label="G (log(S/N):{:.1f}-{:.1f})".format(b - 0.25, b + 0.25),
-                color="#fc8d62",
+                color=color_g,
                 bins=50,
                 range=([0, 1]),
                 log=True,
@@ -73,7 +87,7 @@ def score_hist(dataset, models, idx=[], snr_lim=2.5):
             if k == 0:
                 ax[j, k].legend(prop={"size": 10})
             if j == 0:
-                ax[j, k].set_title(models[k])
+                ax[j, k].set_title(label_model.get(models[k], models[k]))
             elif j == 2:
                 ax[j, k].set_xlabel("score")
 
@@ -99,7 +113,6 @@ def ROC_cv(
     if idx_train is None:
         idx_train = np.array([True] * len(train_set.ds))
 
-    colors = sns.color_palette("Set2")
     from sklearn.metrics import roc_curve
 
     if bins_by == None:
@@ -125,16 +138,14 @@ def ROC_cv(
         # CV results
         for j, model in enumerate(models):
             fpr, tpr, _ = roc_curve(y_true, train_set.pred[model][idx_train])
-            ax.plot(fpr, tpr, label=model, color=colors[j])
+            ax.plot(fpr, tpr, label=label_model.get(model, model), color=color_model.get(model, "black"))
             if cv_idx:
                 for l in range(len(cv_idx)):
                     eval_idx = np.array([False] * len(train_set.ds))
                     eval_idx[cv_idx[l]] = True
                     y_true = np.array(train_set.y_true)[idx_train & eval_idx]
-                    fpr, tpr, _ = roc_curve(
-                        y_true, train_set.pred[model][idx_train & eval_idx]
-                    )
-                    ax.plot(fpr, tpr, color=colors[j], lw=0.25)
+                    fpr, tpr, _ = roc_curve(y_true, train_set.pred[model][idx_train & eval_idx])
+                    ax.plot(fpr, tpr, color=color_model.get(model, "black"), lw=0.25)
 
         ax.set_xlim(6.5e-4, 4.5e-1)
         ax.set_xscale("log")
@@ -173,13 +184,14 @@ def ROC_cv(
             y_true = np.array(train_set.y_true)[idx_train & arg]
             print(
                 "Training set, log(S/N) = {:.1f} - {:.1f}: S = {:.0f}, G = {:.0f}".format(
-                    b - binsize / 2, b + binsize / 2, y_true.sum(), (~y_true).sum()
+                    b - binsize / 2,
+                    b + binsize / 2,
+                    y_true.sum(),
+                    (~y_true).sum(),
                 ),
             )
             ax[k].set_title(
-                "${:.1f}".format(b + binsize / 2)
-                + " > \log(\mathrm{S/N}) > "
-                + "{:.1f}$".format(b - binsize / 2),
+                "${:.1f}".format(b + binsize / 2) + " > \log(\mathrm{S/N}) > " + "{:.1f}$".format(b - binsize / 2),
                 fontsize=22.5,
             )
         elif bins_by == "mag":
@@ -187,13 +199,14 @@ def ROC_cv(
             y_true = np.array(train_set.y_true)[idx_train & arg]
             print(
                 "Training set, mag = {:.0f} - {:.0f}: S = {:.0f}, G = {:.0f}".format(
-                    b - binsize / 2, b + binsize / 2, y_true.sum(), (~y_true).sum()
+                    b - binsize / 2,
+                    b + binsize / 2,
+                    y_true.sum(),
+                    (~y_true).sum(),
                 ),
             )
             ax[k].set_title(
-                "${:.0f}".format(b - binsize / 2)
-                + " < r\ [\mathrm{mag}] < "
-                + "{:.0f}$".format(b + binsize / 2),
+                "${:.0f}".format(b - binsize / 2) + " < r\ [\mathrm{mag}] < " + "{:.0f}$".format(b + binsize / 2),
                 fontsize=22.5,
             )
         try:
@@ -216,16 +229,17 @@ def ROC_cv(
         for j, model in enumerate(models):
             y_true = np.array(train_set.y_true)[idx_train & arg]
             fpr, tpr, _ = roc_curve(y_true, train_set.pred[model][idx_train & arg])
-            ax[k].plot(fpr, tpr, label=model, color=colors[j])
+            ax[k].plot(fpr, tpr, label=label_model.get(model, model), color=color_model.get(model, "black"), lw=1)
             if cv_idx:
                 for l in range(len(cv_idx)):
                     eval_idx = np.array([False] * len(train_set.ds))
                     eval_idx[cv_idx[l]] = True
                     y_true = np.array(train_set.y_true)[idx_train & arg & eval_idx]
                     fpr, tpr, _ = roc_curve(
-                        y_true, train_set.pred[model][idx_train & arg & eval_idx]
+                        y_true,
+                        train_set.pred[model][idx_train & arg & eval_idx],
                     )
-                    ax[k].plot(fpr, tpr, color=colors[j], lw=0.25)
+                    ax[k].plot(fpr, tpr, color=color_model.get(model, "black"), lw=0.1)
 
     ax[0].set_xlim(6.5e-4, 4.5e-1)
     ax[0].set_xscale("log")
@@ -264,7 +278,6 @@ def ROC_train_test(
     if (len(idx_test) == 0) & (test_set != None):
         idx_test = np.array([True] * len(test_set.ds))
 
-    colors = sns.color_palette("Set2")
     from sklearn.metrics import roc_curve
 
     if bins_by == "SNR":
@@ -288,37 +301,41 @@ def ROC_train_test(
 
     for k, b in enumerate(bins):
         if bins_by == "SNR":
-            arg = np.abs(np.log10(train_set.ds[idx_train].snr) - b) < binsize / 2
-            y_true = np.array(train_set.y_true)[idx_train][arg]
+            log_snr = np.log10(train_set.ds.snr)
+            arg = np.abs(log_snr - b) < binsize / 2
+            y_true = train_set.y_true.values[idx_train & arg]
             print(
                 "Training set, log(S/N) = {:.1f} - {:.1f}: S = {:.0f}, G = {:.0f}".format(
-                    b - binsize / 2, b + binsize / 2, y_true.sum(), (~y_true).sum()
+                    b - binsize / 2,
+                    b + binsize / 2,
+                    y_true.sum(),
+                    (~y_true).sum(),
                 ),
             )
             ax[k].set_title(
-                "${:.1f}".format(b + binsize / 2)
-                + " > \log(\mathrm{S/N}) > "
-                + "{:.1f}$".format(b - binsize / 2),
+                "${:.1f}".format(b + binsize / 2) + " > \log(\mathrm{S/N}) > " + "{:.1f}$".format(b - binsize / 2),
                 fontsize=22.5,
             )
         elif bins_by == "mag":
-            arg = np.abs(train_set.ds[idx_train].mag_r - b) < binsize / 2
-            y_true = np.array(train_set.y_true)[idx_train][arg]
+            mag = np.array(train_set.ds.mag_r)
+            arg = np.abs(mag - b) < binsize / 2
+            y_true = train_set.y_true.values[idx_train & arg]
             print(
                 "Training set, mag = {:.0f} - {:.0f}: S = {:.0f}, G = {:.0f}".format(
-                    b - binsize / 2, b + binsize / 2, y_true.sum(), (~y_true).sum()
+                    b - binsize / 2,
+                    b + binsize / 2,
+                    y_true.sum(),
+                    (~y_true).sum(),
                 ),
             )
             ax[k].set_title(
-                "${:.0f}".format(b - binsize / 2)
-                + " < r\ [\mathrm{mag}] < "
-                + "{:.0f}$".format(b + binsize / 2),
+                "${:.0f}".format(b - binsize / 2) + " < r\ [\mathrm{mag}] < " + "{:.0f}$".format(b + binsize / 2),
                 fontsize=22.5,
             )
 
         for j, model in enumerate(models):
             fpr, tpr, _ = roc_curve(y_true, train_set.pred[model][idx_train][arg])
-            ax[k].plot(fpr, tpr, label=model, color=colors[j])
+            ax[k].plot(fpr, tpr, label=label_model.get(model, model), color=color_model.get(model, "black"))
         try:
             # LS classifier
             LS_star = np.array(train_set.ds.type)[idx_train][arg] == "PSF"
@@ -337,25 +354,33 @@ def ROC_train_test(
     if not test_set == None:
         for k, b in enumerate(bins):
             if bins_by == "SNR":
-                arg = np.abs(np.log10(test_set.ds[idx_test].snr) - b) < binsize / 2
+                log_snr = np.log10(test_set.ds[idx_test].snr)
+                arg = np.abs(log_snr - b) < binsize / 2
                 y_true = np.array(test_set.y_true)[idx_test][arg]
                 print(
                     "Test set, log(S/N) = {:.1f} - {:.1f}: S = {:.0f}, G = {:.0f}".format(
-                        b - binsize / 2, b + binsize / 2, y_true.sum(), (~y_true).sum()
+                        b - binsize / 2,
+                        b + binsize / 2,
+                        y_true.sum(),
+                        (~y_true).sum(),
                     ),
                 )
             elif bins_by == "mag":
-                arg = np.abs(test_set.ds[idx_test].mag_r - b) < binsize / 2
+                mag = test_set.ds[idx_test].mag_r
+                arg = np.abs(mag - b) < binsize / 2
                 y_true = np.array(test_set.y_true)[idx_test][arg]
                 print(
                     "Test set, mag = {:.0f} - {:.0f}: S = {:.0f}, G = {:.0f}".format(
-                        b - binsize / 2, b + binsize / 2, y_true.sum(), (~y_true).sum()
+                        b - binsize / 2,
+                        b + binsize / 2,
+                        y_true.sum(),
+                        (~y_true).sum(),
                     ),
                 )
 
             for j, model in enumerate(models):
                 fpr, tpr, _ = roc_curve(y_true, test_set.pred[model][idx_test][arg])
-                ax[k].plot(fpr, tpr, linestyle="--", color=colors[j])
+                ax[k].plot(fpr, tpr, linestyle="--", color=color_model.get(model, "black"))
             try:
                 # LS classifier
                 LS_star = np.array(test_set.ds.type)[idx_test][arg] == "PSF"

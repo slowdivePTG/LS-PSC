@@ -65,15 +65,14 @@ if __name__ == "__main__":
 
     # Round 3 - tune subsample, colsample_bytree
     # param_grid = dict(
-    #     subsample=[0.8], #hyper_range["subsample"],
-    #     colsample_bytree=[0.7], #hyper_range["colsample_bytree"],
+    #     subsample=hyper_range["subsample"],
+    #     colsample_bytree=hyper_range["colsample_bytree"],
     # )
 
     # Round 4 - tune gamma
     param_grid = dict(
-        gamma=[0.7, 1, 2], #hyper_range["gamma"],
+        gamma=[0.1], #hyper_range["gamma"],
     )
-
 
     # training set
     ts_bright = pd.read_parquet("./Data/ls_dr10_cosmos_bright_relabel.parquet")
@@ -120,7 +119,8 @@ if __name__ == "__main__":
     if args.model == "white_b+r":
         print("Aperture photometry (blue + red, trained separately)")
         X_features = ts.weighted_X_white_br
-        hyper_fiducial["weight"] = 0.3  # CV results
+        hyper_fiducial["weight"] = 0.4  # CV results
+        hyper_fiducial["min_child_weight"] = 10
         hyper_fiducial["colsample_bytree"] = 0.9
         hyper_fiducial["subsample"] = 0.9
 

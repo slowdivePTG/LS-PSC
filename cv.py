@@ -70,10 +70,10 @@ class WeightedXGBClassifier(BaseEstimator, ClassifierMixin):
                 self.eval_results_["validation_{}".format(k)] = {}
                 self.eval_results_["validation_{}".format(k)][self.eval_metric] = []
 
-            for epoch in np.arange(self.kwargs["n_estimators"] // 25) * 25:
+            for epoch in np.arange(self.kwargs["n_estimators"] // 50) * 50:
                 # Train one epoch for both models
-                self.clf1.n_estimators = epoch + 25
-                self.clf2.n_estimators = epoch + 25
+                self.clf1.n_estimators = epoch + 50
+                self.clf2.n_estimators = epoch + 50
                 self.clf1.fit(X_train_1, y, early_stopping_rounds=None)
                 self.clf2.fit(X_train_2, y, early_stopping_rounds=None)
 
@@ -90,18 +90,18 @@ class WeightedXGBClassifier(BaseEstimator, ClassifierMixin):
                 score = self.eval_results_["validation_1"][self.eval_metric][-1]
                 if score > best_score:
                     best_score = score
-                    best_iteration = epoch + 25
+                    best_iteration = epoch + 50
                     no_improvement_rounds = 0
                 else:
-                    no_improvement_rounds += 25
+                    no_improvement_rounds += 50
                 if kwargs.get("verbose", 0) > 0:
                     print(
-                        f"N_estimators {epoch + 25}: score = {score:.4f}, best score = {best_score:.4f}; no improvement rounds = {no_improvement_rounds}"
+                        f"N_estimators {epoch + 50}: score = {score:.4f}, best score = {best_score:.4f}; no improvement rounds = {no_improvement_rounds}"
                     )
 
                 # Early stopping
                 if no_improvement_rounds >= self.early_stopping_rounds:
-                    print(f"Early stopping at epoch {epoch + 25}")
+                    print(f"Early stopping at epoch {epoch + 50}")
                     break
 
             # Set the final number of estimators to the best iteration

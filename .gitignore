@@ -157,6 +157,7 @@ Data/
 Figure/
 COSMOS_ACS_catalog/
 *.fits
+XGB_models/
 
 # Jupyter notebooks (temporarily)
 *comparison*.ipynb

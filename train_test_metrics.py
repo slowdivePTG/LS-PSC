@@ -36,378 +36,386 @@ label_model = dict(
 )
 
 
-def score_hist(dataset, models, idx=[], snr_lim=2.5):
+class ModelComparisonMetrics:
     """
-    histogram of score distribution
+    Class to compare the performance of different models
     """
-    if len(idx) == 0:
-        idx = np.array([True] * len(dataset.ds))
-    y_true = dataset.y_true[idx]
-    ds = dataset.ds[idx]
 
-    bins = snr_lim - np.arange(3) / 2 - 0.25
+    def __init__(self, dataset, models=["grz", "white", "hybrid"], cv_idx=None, **kwargs):
+        """
+        Initialize the ModelComparisonMetrics object.
 
-    _, ax = plt.subplots(
-        3,
-        len(models),
-        figsize=(2.5 * len(models), 6.5),
-        sharey="row",
-        sharex=True,
-        constrained_layout=True,
-    )
+        Parameters
+        ----------
+        dataset : dataset object
+            The dataset object used for training and testing.
+        models : list of str, optional
+            List of models to be used (default: ["grz", "white", "hybrid"]).
+        cv_idx : list of int or None, optional
+            List of indices for cross-validation (default: None).
+        **kwargs : dict
+            Additional keyword arguments.
+            - snr_lim : list of float, tuple, or None, optional
+                List of SNR limits (default: None).
+            - snr_binsize : float, optional
+                SNR binsize (default: 0.5).
+            - mag_lim : list of float, tuple, or None, optional
+                List of r-band magnitude limits (default: None).
+            - mag_binsize : float, optional
+                Magnitude binsize (default: 1.0).
+        """
+        self.models = models
+        self.dataset = dataset
+        self.cv_idx = cv_idx
 
-    for j, b in enumerate(bins):
-        if j == 0:
-            arg = ds.snr > 10 ** (b - 0.25)  # highest S/N
+        self.bins_lim = dict(snr=None, mag=None)
+        self.bins_size = dict(snr=kwargs.get("snr_binsize", 0.5), mag=kwargs.get("mag_binsize", 1.0))
+        self.bins = dict(snr=None, mag=None)
+
+        for key in ["snr", "mag"]:
+            self.bins_lim[key] = kwargs.get(key + "_lim", None)
+            self.bins_size[key] = kwargs.get(key + "_binsize", None)
+            if self.bins_lim[key] is not None:
+                self.bins[key] = np.arange(
+                    self.bins_lim[key][0], self.bins_lim[key][1] + self.bins_size[key], self.bins_size[key]
+                )
+
+    def data_binning(self, idx=None, bins_by=None, **kwargs):
+        """
+        Bin the data based on a specified criterion.
+
+        Parameters:
+        ----------
+        idx : numpy.ndarray, optional
+            Boolean array indicating which data points to include in the binning. Default is None, which includes all data points.
+        bins_by : str, optional
+            The criterion to use for binning. Must be either 'snr' or 'mag'. Default is None.
+        **kwargs : dict, optional
+            Additional keyword arguments:
+            - lim : tuple, optional
+                The lower and upper limits of the bins. Default is None.
+            - binsize : float, optional
+                The size of each bin. Default is the value specified in self.bins_size for the given bins_by criterion.
+
+        Raises:
+        -------
+        ValueError
+            If bins_by is not 'snr' or 'mag'.
+
+        Returns:
+        -------
+        dict
+            A dictionary containing the bins and bin indices.
+            - n_bin : int
+                The number of bins.
+            - bins : numpy.ndarray
+                The bin edges.
+            - bin_idx : numpy.ndarray
+                A boolean array indicating the indices of the dataset in each bin.
+            - title : str
+                The title of the plot ('snr' or 'mag').
+        """
+
+        if idx is None:
+            idx = np.ones(len(self.dataset.ds), dtype=bool)
+        y_true = self.dataset.y_true
+        ds = self.dataset.ds
+
+        if bins_by is not None:
+            if bins_by == "snr":
+                data_to_bin = np.log10(ds.snr)
+                title = r"$\log(\mathrm{S/N})$"
+            elif bins_by == "mag":
+                data_to_bin = ds.mag_r
+                title = r"$r\ [\mathrm{mag}]$"
+            else:
+                raise ValueError("bins_by must be 'snr' or 'mag'")
         else:
-            arg = np.abs(np.log10(ds.snr) - b) < 0.25  # binned S/N
-        print(f"Star: {(y_true & arg).sum()}; Galaxy: {(~y_true & arg).sum()}")
+            data_to_bin = None
+            title = None
 
-        for k, p in enumerate([dataset.pred[model][idx] for model in models]):
-            ax[j, k].hist(
-                p[y_true & arg],
-                histtype="step",
-                label="S (log(S/N):{:.1f}-{:.1f})".format(b - 0.25, b + 0.25),
-                color=color_s,
-                bins=50,
-                range=([0, 1]),
-                log=True,
+        lim = kwargs.get("lim", None)
+        binsize = kwargs.get("binsize", self.bins_size.get(bins_by, None))
+        if lim is None:
+            bins = self.bins.get(bins_by, None)
+        else:
+            assert binsize is not None, "binsize must be provided"
+            bins = np.arange(lim[0], lim[1] + binsize, binsize)
+        if bins is None:  # the entire dataset
+            n_bin = 1
+        else:  # -inf and inf are added to the bins
+            bins = np.concatenate(([-np.inf], bins, [np.inf]))
+            n_bin = len(bins) - 1
+
+        bin_idx = np.ones((n_bin, len(ds)), dtype=bool)
+
+        for j in range(n_bin):
+            if bins_by is not None:
+                bin_idx[j] = (data_to_bin > bins[j]) & (data_to_bin <= bins[j + 1]) & idx
+            else:
+                bin_idx[j] = idx
+            print(f"Bin {j}: Star = {(y_true & bin_idx[j]).sum()}; Galaxy = {(~y_true & bin_idx[j]).sum()}")
+
+        Bins = dict(n_bin=n_bin, bins=bins, bin_idx=bin_idx, title=title)
+        return Bins
+
+    def plot_score_hist(self, idx=None, bins_by=None, **kwargs):
+        """
+        Plots a histogram of the score distribution.
+
+        Parameters:
+        -----------
+        idx : numpy.ndarray, optional
+            Boolean array indicating which data points to include in the histogram. Default is None, which includes all data points.
+        bins_by : str, optional
+            The criterion to use for binning. Must be either 'snr' or 'mag'. Default is None.
+        **kwargs : dict, optional
+            Additional keyword arguments to be passed to the data_binning method.
+            - hist_bins : int, optional
+            - lim : tuple, optional
+            - binsize : float, optional
+
+        Returns:
+        --------
+        matplotlib.axes.Axes
+            The axes object containing the histogram.
+
+        """
+        # Get the true labels from the dataset
+        y_true = self.dataset.y_true
+
+        # Perform data binning
+        bins_results = self.data_binning(idx=idx, bins_by=bins_by, **kwargs)
+        bins = bins_results["bins"]
+        bin_idx = bins_results["bin_idx"]
+        title = bins_results["title"]
+
+        # Calculate the number of columns and rows for subplots
+        n_col = bins_results["n_bin"]
+        n_row = len(self.models)
+
+        # Create subplots
+        _, ax = plt.subplots(
+            ncols=n_col,
+            nrows=n_row,
+            figsize=(1 + n_col * 3, n_row * 3),
+            sharey=True,
+            sharex=True,
+            constrained_layout=True,
+        )
+
+        ax = ax.ravel().reshape((n_row, n_col))
+
+        for j, arg in enumerate(bin_idx):
+            for k, p in enumerate([self.dataset.pred[model] for model in self.models]):
+                ax[k, j].hist(
+                    p[y_true & arg],
+                    histtype="step",
+                    label=r"$\mathrm{Star}$",
+                    color=color_s,
+                    bins=kwargs.get("hist_bins", 50),
+                    range=([0, 1]),
+                    log=True,
+                )
+                ax[k, j].hist(
+                    p[~y_true & arg],
+                    histtype="step",
+                    label=r"$\mathrm{Galaxy}$",
+                    color=color_g,
+                    bins=kwargs.get("hist_bins", 50),
+                    range=([0, 1]),
+                    log=True,
+                )
+        if n_col > 1:
+            for j in range(n_col):
+                ax[-1, j].set_xlabel(r"$\mathrm{Score}$")
+                if j == 0:
+                    ax[0, j].set_title(f"{title} $\le$ ${bins[j+1]:.1f}$", fontsize=22.5)
+                elif j == n_col - 1:
+                    ax[0, j].set_title(f"{title} $>$ ${bins[j]:.1f}$", fontsize=22.5)
+                else:
+                    ax[0, j].set_title(f"${bins[j]:.1f}$ $<$ {title} $\le$ ${bins[j+1]:.1f}$", fontsize=22.5)
+        for k in range(n_row):
+            ax[k, 0].xaxis.set_major_locator(MultipleLocator(0.5))
+            ax[k, 0].xaxis.set_minor_locator(MultipleLocator(0.05))
+            import matplotlib.ticker as ticker
+
+            ax[k, 0].yaxis.set_major_locator(ticker.LogLocator(base=10, numticks=10))
+            ax[k, 0].yaxis.set_minor_locator(
+                ticker.LogLocator(base=10, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9), numticks=10)
             )
-            ax[j, k].hist(
-                p[~y_true & arg],
-                histtype="step",
-                label="G (log(S/N):{:.1f}-{:.1f})".format(b - 0.25, b + 0.25),
-                color=color_g,
-                bins=50,
-                range=([0, 1]),
-                log=True,
+            ax[k, 0].set_ylabel(r"$\mathrm{Counts}$")
+            ax[k, -1].text(
+                1.05,
+                0.5,
+                label_model[self.models[k]],
+                transform=ax[k, -1].transAxes,
+                rotation=90,
+                va="center",
             )
-            ax[j, k].tick_params(labelsize=15)
-            ax[j, k].tick_params(axis="y", which="minor")
-            if k == 0:
-                ax[j, k].legend(prop={"size": 10})
-            if j == 0:
-                ax[j, k].set_title(label_model.get(models[k], models[k]))
-            elif j == 2:
-                ax[j, k].set_xlabel("score")
 
-    plt.xlim(-0.05, 1.05)
-    plt.ylim(1, None)
-    plt.show()
+        ax[0, -1].legend(loc="upper right", fontsize=15)
 
-
-def ROC_cv(
-    train_set,
-    models=[],
-    idx_train=None,
-    bins_by="SNR",
-    binsize=None,
-    snr_lim=2.5,
-    mag_lim=19.5,
-    cv_idx=None,
-):
-    """
-    ROC curve for training set in the cross-validation
-    """
-
-    if idx_train is None:
-        idx_train = np.array([True] * len(train_set.ds))
-
-    from sklearn.metrics import roc_curve
-
-    if bins_by == None:
-        fig, ax = plt.subplots(1, 1, figsize=(4, 4))
-        y_true = train_set.y_true.astype(bool)[idx_train]
-
-        try:
-            # LS classifier
-            LS_star = train_set.ds.type.astype(str)[idx_train] == "PSF"
-
-            ax.scatter(
-                ((~y_true) & LS_star).sum() / (~y_true).sum(),
-                (y_true & LS_star).sum() / y_true.sum(),
-                marker="*",
-                edgecolor="k",
-                facecolor="none",
-                s=250,
-                zorder=100,
-            )
-        except:
-            print("No LS classifier")
-
-        # CV results
-        for j, model in enumerate(models):
-            fpr, tpr, _ = roc_curve(y_true, train_set.pred[model][idx_train])
-            ax.plot(fpr, tpr, label=label_model.get(model, model), color=color_model.get(model, "black"))
-            if cv_idx:
-                for l in range(len(cv_idx)):
-                    eval_idx = np.array([False] * len(train_set.ds))
-                    eval_idx[cv_idx[l]] = True
-                    y_true = np.array(train_set.y_true)[idx_train & eval_idx]
-                    fpr, tpr, _ = roc_curve(y_true, train_set.pred[model][idx_train & eval_idx])
-                    ax.plot(fpr, tpr, color=color_model.get(model, "black"), lw=0.25)
-
-        ax.set_xlim(6.5e-4, 4.5e-1)
-        ax.set_xscale("log")
-
-        ax.set_xlabel(r"$\mathrm{FPR}$")
-        ax.set_ylabel(r"$\mathrm{TPR}$")
-
-        ax.axvline(0.005, color="0.8", linestyle="-.", linewidth=5, zorder=-10)
-        # ax[0].set_ylim(0.32, 1.01)
-
-        ax.legend(prop={"size": 15}, loc=4)
+        plt.ylim(0.8, None)
         return ax
 
-    if bins_by == "SNR":
-        bins = snr_lim - np.arange(4) / 2
-        if binsize == None:
-            binsize = 0.5
-    elif bins_by == "mag":
-        bins = np.arange(4) + mag_lim
-        if binsize == None:
-            binsize = 1
+    def plot_ROC(self, idx=None, bins_by=None, **kwargs):
+        """
+        Plot the Receiver Operating Characteristic (ROC) curve for the training set in the cross-validation or
+        for the test set in the bootstrapping.
 
-    fig, ax = plt.subplots(
-        1,
-        len(bins),
-        figsize=(14, 4),
-        sharey=True,
-        sharex=True,
-        constrained_layout=True,
-    )
-    ax = ax.ravel()
-    for k, b in enumerate(bins):
-        # print the number of stars and galaxies in each bin
-        if bins_by == "SNR":
-            arg = np.abs(np.log10(train_set.ds.snr) - b) < binsize / 2
-            y_true = np.array(train_set.y_true)[idx_train & arg]
-            print(
-                "Training set, log(S/N) = {:.1f} - {:.1f}: S = {:.0f}, G = {:.0f}".format(
-                    b - binsize / 2,
-                    b + binsize / 2,
-                    y_true.sum(),
-                    (~y_true).sum(),
-                ),
-            )
-            ax[k].set_title(
-                "${:.1f}".format(b + binsize / 2) + " > \log(\mathrm{S/N}) > " + "{:.1f}$".format(b - binsize / 2),
-                fontsize=22.5,
-            )
-        elif bins_by == "mag":
-            arg = np.abs(train_set.ds.mag_r.astype(float) - b) < binsize / 2
-            y_true = np.array(train_set.y_true)[idx_train & arg]
-            print(
-                "Training set, mag = {:.0f} - {:.0f}: S = {:.0f}, G = {:.0f}".format(
-                    b - binsize / 2,
-                    b + binsize / 2,
-                    y_true.sum(),
-                    (~y_true).sum(),
-                ),
-            )
-            ax[k].set_title(
-                "${:.0f}".format(b - binsize / 2) + " < r\ [\mathrm{mag}] < " + "{:.0f}$".format(b + binsize / 2),
-                fontsize=22.5,
-            )
-        try:
+        Parameters
+        ----------
+        idx : int or None, optional
+            Index of the data points to include in the ROC curve. Default is None.
+        bins_by : str or None, optional
+            Binning method for data points. Default is None.
+        **kwargs : dict, optional
+            Additional keyword arguments to be passed to the data_binning method.
+            - cv_idx : list of int, optional
+            - lim : tuple, optional
+            - binsize : float, optional
+
+        Returns
+        -------
+        ax : matplotlib.axes.Axes
+            Axes object containing the ROC curve plot.
+        """
+        from sklearn.metrics import roc_curve
+
+        # Get the true labels from the dataset
+        y_true = self.dataset.y_true
+
+        # Perform data binning
+        bins_results = self.data_binning(idx=idx, bins_by=bins_by, **kwargs)
+        bins = bins_results["bins"]
+        bin_idx = bins_results["bin_idx"]
+        title = bins_results["title"]
+
+        # Calculate the number of columns and rows for subplots
+        n_col = bins_results["n_bin"]
+
+        # Create subplots
+        _, ax = plt.subplots(
+            ncols=n_col,
+            nrows=1,
+            figsize=(1 + 3 * n_col, 1 + 3),
+            sharey=True,
+            sharex=True,
+            constrained_layout=True,
+        )
+
+        cv_idx = kwargs.get("cv_idx", self.cv_idx)
+
+        ax = np.atleast_1d(ax)
+
+        for j, arg in enumerate(bin_idx):
+            for k, p in enumerate([self.dataset.pred[model] for model in self.models]):
+                # overall ROC curve
+                fpr, tpr, _ = roc_curve(y_true[arg], p[arg])
+                ax[j].plot(fpr, tpr, label=label_model[self.models[k]], color=color_model.get(self.models[k], "black"))
+                # each fold in the cross-validation
+                if cv_idx is not None:
+                    for l in range(len(cv_idx)):
+                        eval_idx = np.array([False] * len(self.dataset.ds))
+                        eval_idx[cv_idx[l]] = True
+                        fpr, tpr, _ = roc_curve(y_true[arg & eval_idx], p[arg & eval_idx])
+                        ax[j].plot(fpr, tpr, color=color_model.get(self.models[k], "black"), lw=0.1)
             # LS classifier
-            LS_star = np.array(train_set.ds.type)[idx_train][arg] == "PSF"
-
-            ax[k].scatter(
-                ((~y_true) & LS_star).sum() / (~y_true).sum(),
-                (y_true & LS_star).sum() / y_true.sum(),
-                marker="*",
-                edgecolor="k",
-                facecolor="none",
-                s=250,
-                zorder=100,
-            )
-        except:
-            print("No LS classifier")
-
-        # CV results
-        for j, model in enumerate(models):
-            y_true = np.array(train_set.y_true)[idx_train & arg]
-            fpr, tpr, _ = roc_curve(y_true, train_set.pred[model][idx_train & arg])
-            ax[k].plot(fpr, tpr, label=label_model.get(model, model), color=color_model.get(model, "black"), lw=1)
-            if cv_idx:
-                for l in range(len(cv_idx)):
-                    eval_idx = np.array([False] * len(train_set.ds))
-                    eval_idx[cv_idx[l]] = True
-                    y_true = np.array(train_set.y_true)[idx_train & arg & eval_idx]
-                    fpr, tpr, _ = roc_curve(
-                        y_true,
-                        train_set.pred[model][idx_train & arg & eval_idx],
-                    )
-                    ax[k].plot(fpr, tpr, color=color_model.get(model, "black"), lw=0.1)
-
-    ax[0].set_xlim(6.5e-4, 4.5e-1)
-    ax[0].set_xscale("log")
-
-    ax[0].set_ylabel(r"$\mathrm{TPR}$")
-
-    for a in ax:
-        a.axvline(0.005, color="0.8", linestyle="-.", linewidth=5, zorder=-10)
-        a.set_xlabel(r"$\mathrm{FPR}$")
-    # ax[0].set_ylim(0.32, 1.01)
-
-    ax[0].legend(prop={"size": 15}, loc=4)
-    # plt.show()
-    return ax
-
-
-def ROC_train_test(
-    train_set,
-    test_set=None,
-    models=[],
-    idx_train=[],
-    idx_test=[],
-    bins_by="SNR",
-    binsize=None,
-    snr_lim=2.5,
-    mag_lim=19.5,
-):
-    """
-    ROC curve for training and test set
-    """
-    if not bins_by in ["SNR", "mag"]:
-        raise IndexError("Modes not supported")
-
-    if len(idx_train) == 0:
-        idx_train = np.array([True] * len(train_set.ds))
-    if (len(idx_test) == 0) & (test_set != None):
-        idx_test = np.array([True] * len(test_set.ds))
-
-    from sklearn.metrics import roc_curve
-
-    if bins_by == "SNR":
-        bins = snr_lim - np.arange(4) / 2
-        if binsize == None:
-            binsize = 0.5
-    elif bins_by == "mag":
-        bins = np.arange(4) + mag_lim
-        if binsize == None:
-            binsize = 1
-
-    fig, ax = plt.subplots(
-        1,
-        len(bins),
-        figsize=(14, 4),
-        sharey=True,
-        sharex=True,
-        constrained_layout=True,
-    )
-    ax = ax.ravel()
-
-    for k, b in enumerate(bins):
-        if bins_by == "SNR":
-            log_snr = np.log10(train_set.ds.snr)
-            arg = np.abs(log_snr - b) < binsize / 2
-            y_true = train_set.y_true.values[idx_train & arg]
-            print(
-                "Training set, log(S/N) = {:.1f} - {:.1f}: S = {:.0f}, G = {:.0f}".format(
-                    b - binsize / 2,
-                    b + binsize / 2,
-                    y_true.sum(),
-                    (~y_true).sum(),
-                ),
-            )
-            ax[k].set_title(
-                "${:.1f}".format(b + binsize / 2) + " > \log(\mathrm{S/N}) > " + "{:.1f}$".format(b - binsize / 2),
-                fontsize=22.5,
-            )
-        elif bins_by == "mag":
-            mag = np.array(train_set.ds.mag_r)
-            arg = np.abs(mag - b) < binsize / 2
-            y_true = train_set.y_true.values[idx_train & arg]
-            print(
-                "Training set, mag = {:.0f} - {:.0f}: S = {:.0f}, G = {:.0f}".format(
-                    b - binsize / 2,
-                    b + binsize / 2,
-                    y_true.sum(),
-                    (~y_true).sum(),
-                ),
-            )
-            ax[k].set_title(
-                "${:.0f}".format(b - binsize / 2) + " < r\ [\mathrm{mag}] < " + "{:.0f}$".format(b + binsize / 2),
-                fontsize=22.5,
-            )
-
-        for j, model in enumerate(models):
-            fpr, tpr, _ = roc_curve(y_true, train_set.pred[model][idx_train][arg])
-            ax[k].plot(fpr, tpr, label=label_model.get(model, model), color=color_model.get(model, "black"))
-        try:
-            # LS classifier
-            LS_star = np.array(train_set.ds.type)[idx_train][arg] == "PSF"
-
-            ax[k].scatter(
-                ((~y_true) & LS_star).sum() / (~y_true).sum(),
-                (y_true & LS_star).sum() / y_true.sum(),
-                marker="*",
-                edgecolor="k",
-                facecolor="none",
-                s=250,
-                zorder=100,
-            )
-        except:
-            print("No LS classifier")
-    if not test_set == None:
-        for k, b in enumerate(bins):
-            if bins_by == "SNR":
-                log_snr = np.log10(test_set.ds[idx_test].snr)
-                arg = np.abs(log_snr - b) < binsize / 2
-                y_true = np.array(test_set.y_true)[idx_test][arg]
-                print(
-                    "Test set, log(S/N) = {:.1f} - {:.1f}: S = {:.0f}, G = {:.0f}".format(
-                        b - binsize / 2,
-                        b + binsize / 2,
-                        y_true.sum(),
-                        (~y_true).sum(),
-                    ),
-                )
-            elif bins_by == "mag":
-                mag = test_set.ds[idx_test].mag_r
-                arg = np.abs(mag - b) < binsize / 2
-                y_true = np.array(test_set.y_true)[idx_test][arg]
-                print(
-                    "Test set, mag = {:.0f} - {:.0f}: S = {:.0f}, G = {:.0f}".format(
-                        b - binsize / 2,
-                        b + binsize / 2,
-                        y_true.sum(),
-                        (~y_true).sum(),
-                    ),
-                )
-
-            for j, model in enumerate(models):
-                fpr, tpr, _ = roc_curve(y_true, test_set.pred[model][idx_test][arg])
-                ax[k].plot(fpr, tpr, linestyle="--", color=color_model.get(model, "black"))
             try:
-                # LS classifier
-                LS_star = np.array(test_set.ds.type)[idx_test][arg] == "PSF"
-
-                ax[k].scatter(
-                    ((~y_true) & LS_star).sum() / (~y_true).sum(),
-                    (y_true & LS_star).sum() / y_true.sum(),
+                LS_star = np.array(self.dataset.ds.type)[arg] == "PSF"
+                ax[j].scatter(
+                    ((~y_true[arg]) & LS_star).sum() / (~y_true[arg]).sum(),
+                    (y_true[arg] & LS_star).sum() / y_true[arg].sum(),
                     marker="*",
                     edgecolor="k",
                     facecolor="none",
-                    linestyle="--",
                     s=250,
                     zorder=100,
                 )
             except:
                 print("No LS classifier")
+            ax[j].set_xscale("log")
+            ax[j].axvline(0.005, color="0.8", linestyle="-.", linewidth=5, zorder=-10)
+            ax[j].set_xlabel(r"$\mathrm{FPR}$")
+        ax[0].set_ylabel(r"$\mathrm{TPR}$")
+        ax[0].legend(prop={"size": 15}, loc=4)
 
-    ax[0].set_xlim(6.5e-4, 4.5e-1)
-    ax[0].set_xscale("log")
+        if n_col > 1:
+            for j in range(n_col):
+                if j == 0:
+                    ax[j].set_title(f"{title} $\le$ ${bins[j+1]:.1f}$", fontsize=22.5)
+                elif j == n_col - 1:
+                    ax[j].set_title(f"{title} $>$ ${bins[j]:.1f}$", fontsize=22.5)
+                else:
+                    ax[j].set_title(f"${bins[j]:.1f}$ $<$ {title} $\le$ ${bins[j+1]:.1f}$", fontsize=22.5)
+        return ax
 
-    ax[0].set_ylabel(r"$\mathrm{TPR}$")
+    def plot_accuracy(self, idx=None, bins_by=None, thresh=0.5, **kwargs):
+        """
+        Plot the accuracy scores for different models.
 
-    for a in ax:
-        a.axvline(0.005, color="0.8", linestyle="-.", linewidth=5, zorder=-10)
-        a.set_xlabel(r"$\mathrm{FPR}$")
-    # ax[0].set_ylim(0.32, 1.01)
+        Parameters:
+        ----------
+        idx : int or None, optional
+            Index of the data to be plotted. If None, all data will be plotted.
+        bins_by : str or None, optional
+            Variable to bin the data by. If None, no binning will be performed.
+        thresh : float, optional
+            Threshold value for classification. Default is 0.5.
+        **kwargs : dict, optional
+            Additional keyword arguments to be passed to the data_binning method.
 
-    ax[0].legend(prop={"size": 15}, loc=4)
-    # plt.show()
-    return ax
+        Returns:
+        -------
+        ax : matplotlib.axes.Axes
+            The matplotlib axes object containing the plotted accuracy scores.
+        """
+
+    def plot_accuracy(self, idx=None, bins_by=None, thresh=0.5, **kwargs):
+        """
+        Plot the accuracy scores for different models.
+        """
+
+        # Perform data binning
+        bins_results = self.data_binning(idx=idx, bins_by=bins_by, **kwargs)
+        bins = bins_results["bins"][1:-1]
+        bins_center = (bins[1:] + bins[:-1]) / 2
+        bin_idx = bins_results["bin_idx"][1:-1]
+        xlabel = bins_results["title"]
+
+        fig, ax = plt.subplots(3, 1, figsize=(6, 8), sharex=True, constrained_layout=True)
+
+        models = np.append(self.models, "LS")
+        for model in models:
+            Acc = dict(tpr=[], tnr=[], acc=[])
+            for arg in bin_idx:
+                star = self.dataset.y_true[arg]
+                Acc["tpr"].append((star & (self.dataset.pred[model][arg] > thresh)).sum() / (star).sum())
+                Acc["tnr"].append(((~star) & (~(self.dataset.pred[model][arg] > thresh))).sum() / (~star).sum())
+                Acc["acc"].append(
+                    (
+                        ((~star) & (~(self.dataset.pred[model][arg] > thresh))).sum()
+                        + (star & (self.dataset.pred[model][arg] > thresh)).sum()
+                    )
+                    / arg.sum()
+                )
+
+            ax[0].plot(bins_center, 1 - np.array(Acc["tpr"]), color=color_model.get(model, "black"), marker="*", lw=1)
+            ax[1].plot(bins_center, 1 - np.array(Acc["tnr"]), color=color_model.get(model, "black"), marker="$S$", lw=1)
+            ax[2].plot(
+                bins_center,
+                Acc["acc"],
+                label=label_model.get(model, model),
+                color=color_model.get(model, "black"),
+                marker="o",
+                lw=1,
+            )
+
+        ax[2].set_xlabel(xlabel)
+        ax[0].set_ylabel(r"$\mathrm{FNR}$")
+        ax[1].set_ylabel(r"$\mathrm{FPR}$")
+        ax[2].set_ylabel(r"$\mathrm{Accuracy}$")
+        ax[2].legend(prop={"size": 15})
+
+        return ax

@@ -151,7 +151,7 @@ class ModelComparisonMetrics:
 
         for j in range(n_bin):
             if bins_by is not None:
-                bin_idx[j] = (data_to_bin > bins[j]) & (data_to_bin <= bins[j + 1]) & idx
+                bin_idx[j] = (data_to_bin > bins[j]) & (data_to_bin <= bins[j + 1]) & idx & (~np.isinf(data_to_bin))
             else:
                 bin_idx[j] = idx
             print(f"Bin {j}: Star = {(y_true & bin_idx[j]).sum()}; Galaxy = {(~y_true & bin_idx[j]).sum()}")

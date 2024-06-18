@@ -331,6 +331,7 @@ class ModelComparisonMetrics:
                     tpr,
                     label=self._label_model.get(self.models[k], self.models[k]),
                     color=self._color_model.get(self.models[k], "black"),
+                    lw=2,
                 )
                 # each fold in the cross-validation
                 if cv_idx is not None:
@@ -338,7 +339,7 @@ class ModelComparisonMetrics:
                         eval_idx = np.array([False] * len(self.dataset.ds))
                         eval_idx[cv_idx[l]] = True
                         fpr, tpr, _ = roc_curve(y_true[arg & eval_idx], p[arg & eval_idx])
-                        ax[j].plot(fpr, tpr, color=self._color_model.get(self.models[k], "black"), lw=0.1)
+                        ax[j].plot(fpr, tpr, color=self._color_model.get(self.models[k], "black"), lw=0.5, alpha=0.25)
             # LS classifier
             try:
                 LS_star = np.array(self.dataset.ds.type)[arg] == "PSF"
@@ -359,14 +360,20 @@ class ModelComparisonMetrics:
         ax[0].set_ylabel(r"$\mathrm{TPR}$")
         ax[0].legend(prop={"size": 15}, loc=4)
 
+        # if all elements in bins are integers
+        if all(x == np.round(x) for x in bins[1:-1]):
+            digits = 0
+        else:
+            digits = 1
+
         if n_col > 1:
             for j in range(n_col):
                 if j == 0:
-                    ax[j].set_title(f"{title} $\le$ ${bins[j+1]:.1f}$", fontsize=22.5)
+                    ax[j].set_title(f"{title} $\le$ ${bins[j+1]:.{digits}f}$", fontsize=22.5)
                 elif j == n_col - 1:
-                    ax[j].set_title(f"{title} $>$ ${bins[j]:.1f}$", fontsize=22.5)
+                    ax[j].set_title(f"{title} $>$ ${bins[j]:.{digits}f}$", fontsize=22.5)
                 else:
-                    ax[j].set_title(f"${bins[j]:.1f}$ $<$ {title} $\le$ ${bins[j+1]:.1f}$", fontsize=22.5)
+                    ax[j].set_title(f"${bins[j]:.{digits}f}$ $<$ {title} $\le$ ${bins[j+1]:.{digits}f}$", fontsize=22.5)
         return ax
 
     def plot_accuracy(self, idx=None, bins_by=None, thresh=0.5, **kwargs):

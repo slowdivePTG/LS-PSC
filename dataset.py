@@ -2,6 +2,21 @@ import numpy as np
 
 
 class DataSet:
+    """
+    A class representing a dataset.
+
+    Parameters
+    ---------
+    ds : dict
+        The dataset.
+    y_true : array-like
+        The true labels.
+    manual_mask : str, optional
+        The manual mask. Default is an empty string.
+    scored : bool, optional
+        Whether the dataset is already scored. Default is False.
+    """
+
     def __init__(self, ds, y_true, manual_mask="", scored=False):
         self.ds = ds.copy()
         self.y_true = y_true
@@ -105,6 +120,20 @@ class DataSet:
 
     # aperture phot
     def X_flt_ap(self, flt, table):
+        """
+        Calculate the aperture photometry for a given filter.
+
+        Parameters
+        ---------
+        flt : str
+            The filter (g, r, i, z)
+        table : dict
+            The dataset.
+
+        Returns
+        -------
+        A list of aperture flux ratios.
+        """
         N_flt = 8
 
         if flt in self.manual_mask:
@@ -144,6 +173,19 @@ class DataSet:
 
     # white flux
     def X_white_ap(self, flts, table):
+        """
+        Calculate the white flux for a given set of filters.
+
+        Parameters
+        ---------
+        flts : str
+            The filters (a combination of g, r, i, z)
+        table : dict
+            The dataset.
+
+        Returns:
+        A list of white aperture flux ratios.
+        """
         N_flt = 8
         white_flux = []
         for i in range(N_flt):

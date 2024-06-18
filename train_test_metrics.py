@@ -21,20 +21,6 @@ plt.rcParams.update(
     }
 )
 
-color_s = "#fc8d62"
-color_g = "#8da0cb"
-
-color_model = dict(grz="#984ea3", white="#377eb8", White="#377eb8", hybrid="#4daf4a", Hybrid="#4daf4a", LS="black")
-
-label_model = dict(
-    grz=r"$grz$",
-    white=r"$\mathrm{White}$",
-    White=r"$\mathrm{White}$",
-    hybrid=r"$\mathrm{Hybrid}$",
-    Hybrid=r"$\mathrm{Hybrid}$",
-    LS=r"$\mathrm{LS}$",
-)
-
 
 class ModelComparisonMetrics:
     """
@@ -47,7 +33,7 @@ class ModelComparisonMetrics:
 
         Parameters
         ----------
-        dataset : dataset object
+        dataset : dataset.DataSet
             The dataset object used for training and testing.
         models : list of str, optional
             List of models to be used (default: ["grz", "white", "hybrid"]).
@@ -64,6 +50,22 @@ class ModelComparisonMetrics:
             - mag_binsize : float, optional
                 Magnitude binsize (default: 1.0).
         """
+        self._color_s = "#fc8d62"
+        self._color_g = "#8da0cb"
+
+        self._color_model = dict(
+            grz="#984ea3", white="#377eb8", White="#377eb8", hybrid="#4daf4a", Hybrid="#4daf4a", LS="black"
+        )
+
+        self._label_model = dict(
+            grz=r"$grz$",
+            white=r"$\mathrm{White}$",
+            White=r"$\mathrm{White}$",
+            hybrid=r"$\mathrm{Hybrid}$",
+            Hybrid=r"$\mathrm{Hybrid}$",
+            LS=r"$\mathrm{LS}$",
+        )
+
         self.models = models
         self.dataset = dataset
         self.cv_idx = cv_idx
@@ -79,8 +81,9 @@ class ModelComparisonMetrics:
                 self.bins[key] = np.arange(
                     self.bins_lim[key][0], self.bins_lim[key][1] + self.bins_size[key], self.bins_size[key]
                 )
+        self.bins_results = {}
 
-    def data_binning(self, idx=None, bins_by=None, **kwargs):
+    def data_binning(self, idx=None, bins_by=None, verbose=True, **kwargs):
         """
         Bin the data based on a specified criterion.
 
@@ -90,6 +93,8 @@ class ModelComparisonMetrics:
             Boolean array indicating which data points to include in the binning. Default is None, which includes all data points.
         bins_by : str, optional
             The criterion to use for binning. Must be either 'snr' or 'mag'. Default is None.
+        verbose : bool, optional
+            Whether to print the number of stars and galaxies in each bin. Default is True.
         **kwargs : dict, optional
             Additional keyword arguments:
             - lim : tuple, optional
@@ -149,14 +154,22 @@ class ModelComparisonMetrics:
 
         bin_idx = np.ones((n_bin, len(ds)), dtype=bool)
 
+        N_star, N_gal = np.zeros(n_bin, dtype=int), np.zeros(n_bin, dtype=int)
+        N_tot = np.zeros(n_bin, dtype=int)
+
         for j in range(n_bin):
             if bins_by is not None:
                 bin_idx[j] = (data_to_bin > bins[j]) & (data_to_bin <= bins[j + 1]) & idx & (~np.isinf(data_to_bin))
             else:
                 bin_idx[j] = idx
-            print(f"Bin {j}: Star = {(y_true & bin_idx[j]).sum()}; Galaxy = {(~y_true & bin_idx[j]).sum()}")
+            N_star[j] = (y_true & bin_idx[j]).sum()
+            N_gal[j] = (~y_true & bin_idx[j]).sum()
+            N_tot[j] = bin_idx[j].sum()
+            if verbose:
+                print(f"Bin {j}: Star = {N_star[j]}; Galaxy = {N_gal[j]}")
 
-        Bins = dict(n_bin=n_bin, bins=bins, bin_idx=bin_idx, title=title)
+        Bins = dict(n_bin=n_bin, bins=bins, bin_idx=bin_idx, title=title, N_star=N_star, N_gal=N_gal, N_tot=N_tot)
+        self.bins_results[bins_by] = Bins
         return Bins
 
     def plot_score_hist(self, idx=None, bins_by=None, **kwargs):
@@ -185,13 +198,13 @@ class ModelComparisonMetrics:
         y_true = self.dataset.y_true
 
         # Perform data binning
-        bins_results = self.data_binning(idx=idx, bins_by=bins_by, **kwargs)
-        bins = bins_results["bins"]
-        bin_idx = bins_results["bin_idx"]
-        title = bins_results["title"]
+        self.data_binning(idx=idx, bins_by=bins_by, **kwargs)
+        bins = self.bins_results[bins_by]["bins"]
+        bin_idx = self.bins_results[bins_by]["bin_idx"]
+        title = self.bins_results[bins_by]["title"]
 
         # Calculate the number of columns and rows for subplots
-        n_col = bins_results["n_bin"]
+        n_col = self.bins_results[bins_by]["n_bin"]
         n_row = len(self.models)
 
         # Create subplots
@@ -212,7 +225,7 @@ class ModelComparisonMetrics:
                     p[y_true & arg],
                     histtype="step",
                     label=r"$\mathrm{Star}$",
-                    color=color_s,
+                    color=self._color_s,
                     bins=kwargs.get("hist_bins", 50),
                     range=([0, 1]),
                     log=True,
@@ -221,7 +234,7 @@ class ModelComparisonMetrics:
                     p[~y_true & arg],
                     histtype="step",
                     label=r"$\mathrm{Galaxy}$",
-                    color=color_g,
+                    color=self._color_g,
                     bins=kwargs.get("hist_bins", 50),
                     range=([0, 1]),
                     log=True,
@@ -248,7 +261,7 @@ class ModelComparisonMetrics:
             ax[k, -1].text(
                 1.05,
                 0.5,
-                label_model[self.models[k]],
+                self._label_model.get(self.models[k], self.models[k]),
                 transform=ax[k, -1].transAxes,
                 rotation=90,
                 va="center",
@@ -287,13 +300,13 @@ class ModelComparisonMetrics:
         y_true = self.dataset.y_true
 
         # Perform data binning
-        bins_results = self.data_binning(idx=idx, bins_by=bins_by, **kwargs)
-        bins = bins_results["bins"]
-        bin_idx = bins_results["bin_idx"]
-        title = bins_results["title"]
+        self.data_binning(idx=idx, bins_by=bins_by, **kwargs)
+        bins = self.bins_results[bins_by]["bins"]
+        bin_idx = self.bins_results[bins_by]["bin_idx"]
+        title = self.bins_results[bins_by]["title"]
 
         # Calculate the number of columns and rows for subplots
-        n_col = bins_results["n_bin"]
+        n_col = self.bins_results[bins_by]["n_bin"]
 
         # Create subplots
         _, ax = plt.subplots(
@@ -313,14 +326,19 @@ class ModelComparisonMetrics:
             for k, p in enumerate([self.dataset.pred[model] for model in self.models]):
                 # overall ROC curve
                 fpr, tpr, _ = roc_curve(y_true[arg], p[arg])
-                ax[j].plot(fpr, tpr, label=label_model[self.models[k]], color=color_model.get(self.models[k], "black"))
+                ax[j].plot(
+                    fpr,
+                    tpr,
+                    label=self._label_model.get(self.models[k], self.models[k]),
+                    color=self._color_model.get(self.models[k], "black"),
+                )
                 # each fold in the cross-validation
                 if cv_idx is not None:
                     for l in range(len(cv_idx)):
                         eval_idx = np.array([False] * len(self.dataset.ds))
                         eval_idx[cv_idx[l]] = True
                         fpr, tpr, _ = roc_curve(y_true[arg & eval_idx], p[arg & eval_idx])
-                        ax[j].plot(fpr, tpr, color=color_model.get(self.models[k], "black"), lw=0.1)
+                        ax[j].plot(fpr, tpr, color=self._color_model.get(self.models[k], "black"), lw=0.1)
             # LS classifier
             try:
                 LS_star = np.array(self.dataset.ds.type)[arg] == "PSF"
@@ -372,17 +390,12 @@ class ModelComparisonMetrics:
             The matplotlib axes object containing the plotted accuracy scores.
         """
 
-    def plot_accuracy(self, idx=None, bins_by=None, thresh=0.5, **kwargs):
-        """
-        Plot the accuracy scores for different models.
-        """
-
         # Perform data binning
-        bins_results = self.data_binning(idx=idx, bins_by=bins_by, **kwargs)
-        bins = bins_results["bins"][1:-1]
+        self.data_binning(idx=idx, bins_by=bins_by, **kwargs)
+        bins = self.bins_results[bins_by]["bins"][1:-1]
         bins_center = (bins[1:] + bins[:-1]) / 2
-        bin_idx = bins_results["bin_idx"][1:-1]
-        xlabel = bins_results["title"]
+        bin_idx = self.bins_results[bins_by]["bin_idx"][1:-1]
+        xlabel = self.bins_results[bins_by]["title"]
 
         fig, ax = plt.subplots(3, 1, figsize=(6, 8), sharex=True, constrained_layout=True)
 
@@ -401,13 +414,17 @@ class ModelComparisonMetrics:
                     / arg.sum()
                 )
 
-            ax[0].plot(bins_center, 1 - np.array(Acc["tpr"]), color=color_model.get(model, "black"), marker="*", lw=1)
-            ax[1].plot(bins_center, 1 - np.array(Acc["tnr"]), color=color_model.get(model, "black"), marker="$S$", lw=1)
+            ax[0].plot(
+                bins_center, 1 - np.array(Acc["tpr"]), color=self._color_model.get(model, "black"), marker="*", lw=1
+            )
+            ax[1].plot(
+                bins_center, 1 - np.array(Acc["tnr"]), color=self._color_model.get(model, "black"), marker="$S$", lw=1
+            )
             ax[2].plot(
                 bins_center,
                 Acc["acc"],
-                label=label_model.get(model, model),
-                color=color_model.get(model, "black"),
+                label=self._label_model.get(model, model),
+                color=self._color_model.get(model, "black"),
                 marker="o",
                 lw=1,
             )

@@ -361,12 +361,12 @@ class ModelComparisonMetrics:
         ax[0].legend(prop={"size": 15}, loc=4)
 
         # if all elements in bins are integers
-        if all(x == np.round(x) for x in bins[1:-1]):
-            digits = 0
-        else:
-            digits = 1
-
         if n_col > 1:
+            if all(x == np.round(x) for x in bins[1:-1]):
+                digits = 0
+            else:
+                digits = 1
+                
             for j in range(n_col):
                 if j == 0:
                     ax[j].set_title(f"{title} $\le$ ${bins[j+1]:.{digits}f}$", fontsize=22.5)

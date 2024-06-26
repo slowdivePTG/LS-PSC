@@ -1,1 +1,61 @@
-{"model": "white", "res": {"classifier": "XGBoost", "scoring": "FoM", "accuracy": [0.9648065816262933, 0.964827356961815, 0.9656583703826817, 0.965699921053725, 0.9650136081274802], "FoM": [0.6519032798659324, 0.6480727795068231, 0.6596457635232168, 0.6486357108664432, 0.6471151544170457], "ROC_AUC": [0.9619673913701188, 0.9609388626573049, 0.9629531915613773, 0.9614906204781744, 0.9610197041666996], "best_params": [{"min_child_weight": 6}, {"min_child_weight": 6}, {"min_child_weight": 6}, {"min_child_weight": 6}, {"min_child_weight": 6}]}, "param": {"n_estimators": 500, "eta": 0.05, "max_depth": 10, "min_child_weight": 6, "subsample": 0.8, "colsample_bytree": 0.8, "gamma": 0.1, "reg_alpha": 0, "reg_lambda": 0}, "param_grid": {"min_child_weight": [6]}}
+{
+    "model": "white",
+    "res": {
+        "classifier": "XGBoost",
+        "scoring": "FoM",
+        "accuracy": [
+            0.9648065816262933,
+            0.964827356961815,
+            0.9656583703826817,
+            0.965699921053725,
+            0.9650136081274802
+        ],
+        "FoM": [
+            0.6519032798659324,
+            0.6480727795068231,
+            0.6596457635232168,
+            0.6486357108664432,
+            0.6471151544170457
+        ],
+        "ROC_AUC": [
+            0.9619673913701188,
+            0.9609388626573049,
+            0.9629531915613773,
+            0.9614906204781744,
+            0.9610197041666996
+        ],
+        "best_params": [
+            {
+                "min_child_weight": 6
+            },
+            {
+                "min_child_weight": 6
+            },
+            {
+                "min_child_weight": 6
+            },
+            {
+                "min_child_weight": 6
+            },
+            {
+                "min_child_weight": 6
+            }
+        ]
+    },
+    "param": {
+        "n_estimators": 500,
+        "eta": 0.05,
+        "max_depth": 10,
+        "min_child_weight": 6,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "gamma": 0.1,
+        "reg_alpha": 0,
+        "reg_lambda": 0
+    },
+    "param_grid": {
+        "min_child_weight": [
+            6
+        ]
+    }
+}

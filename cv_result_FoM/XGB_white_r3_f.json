@@ -1,1 +1,69 @@
-{"model": "white", "res": {"classifier": "XGBoost", "scoring": "FoM", "accuracy": [0.9647234802842066, 0.9652428636722483, 0.9656583703826817, 0.9654090663564217, 0.9651174869632061], "FoM": [0.6540579363179315, 0.6492698108690448, 0.6603638104356151, 0.6503111536620393, 0.6447210916926024], "ROC_AUC": [0.962576132618864, 0.9615686759279828, 0.9632058513102075, 0.9618093113784832, 0.9608883591406935], "best_params": [{"colsample_bytree": 0.8, "subsample": 0.8}, {"colsample_bytree": 0.8, "subsample": 0.8}, {"colsample_bytree": 0.8, "subsample": 0.8}, {"colsample_bytree": 0.8, "subsample": 0.8}, {"colsample_bytree": 0.8, "subsample": 0.8}]}, "param": {"n_estimators": 500, "eta": 0.05, "max_depth": 10, "min_child_weight": 8, "subsample": 0.8, "colsample_bytree": 0.8, "gamma": 0.1, "reg_alpha": 0, "reg_lambda": 0}, "param_grid": {"subsample": [0.8], "colsample_bytree": [0.8]}}
+{
+    "model": "white",
+    "res": {
+        "classifier": "XGBoost",
+        "scoring": "FoM",
+        "accuracy": [
+            0.9647234802842066,
+            0.9652428636722483,
+            0.9656583703826817,
+            0.9654090663564217,
+            0.9651174869632061
+        ],
+        "FoM": [
+            0.6540579363179315,
+            0.6492698108690448,
+            0.6603638104356151,
+            0.6503111536620393,
+            0.6447210916926024
+        ],
+        "ROC_AUC": [
+            0.962576132618864,
+            0.9615686759279828,
+            0.9632058513102075,
+            0.9618093113784832,
+            0.9608883591406935
+        ],
+        "best_params": [
+            {
+                "colsample_bytree": 0.8,
+                "subsample": 0.8
+            },
+            {
+                "colsample_bytree": 0.8,
+                "subsample": 0.8
+            },
+            {
+                "colsample_bytree": 0.8,
+                "subsample": 0.8
+            },
+            {
+                "colsample_bytree": 0.8,
+                "subsample": 0.8
+            },
+            {
+                "colsample_bytree": 0.8,
+                "subsample": 0.8
+            }
+        ]
+    },
+    "param": {
+        "n_estimators": 500,
+        "eta": 0.05,
+        "max_depth": 10,
+        "min_child_weight": 8,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "gamma": 0.1,
+        "reg_alpha": 0,
+        "reg_lambda": 0
+    },
+    "param_grid": {
+        "subsample": [
+            0.8
+        ],
+        "colsample_bytree": [
+            0.8
+        ]
+    }
+}

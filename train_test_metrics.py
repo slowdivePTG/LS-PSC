@@ -366,7 +366,7 @@ class ModelComparisonMetrics:
                 digits = 0
             else:
                 digits = 1
-                
+
             for j in range(n_col):
                 if j == 0:
                     ax[j].set_title(f"{title} $\le$ ${bins[j+1]:.{digits}f}$", fontsize=22.5)
@@ -376,9 +376,9 @@ class ModelComparisonMetrics:
                     ax[j].set_title(f"${bins[j]:.{digits}f}$ $<$ {title} $\le$ ${bins[j+1]:.{digits}f}$", fontsize=22.5)
         return ax
 
-    def plot_accuracy(self, idx=None, bins_by=None, thresh=0.5, **kwargs):
+    def plot_FPFN(self, idx=None, bins_by=None, thresh=0.5, **kwargs):
         """
-        Plot the accuracy scores for different models.
+        Plot the FPR/FNR for different models.
 
         Parameters:
         ----------
@@ -394,7 +394,7 @@ class ModelComparisonMetrics:
         Returns:
         -------
         ax : matplotlib.axes.Axes
-            The matplotlib axes object containing the plotted accuracy scores.
+            The matplotlib axes object containing the plotted FPR/FNR.
         """
 
         # Perform data binning
@@ -404,42 +404,53 @@ class ModelComparisonMetrics:
         bin_idx = self.bins_results[bins_by]["bin_idx"][1:-1]
         xlabel = self.bins_results[bins_by]["title"]
 
-        fig, ax = plt.subplots(3, 1, figsize=(6, 8), sharex=True, constrained_layout=True)
+        fig, ax = plt.subplots(2, 1, figsize=(6, 7), sharex=True, constrained_layout=True)
 
-        models = np.append(self.models, "LS")
-        for model in models:
+        cv_idx = kwargs.get("cv_idx", self.cv_idx)
+
+        models = np.append(["LS"], self.models)
+        for l, model in enumerate(models):
             Acc = dict(tpr=[], tnr=[], acc=[])
+            Acc_err = dict(tpr=[], tnr=[], acc=[])
             for arg in bin_idx:
                 star = self.dataset.y_true[arg]
                 Acc["tpr"].append((star & (self.dataset.pred[model][arg] > thresh)).sum() / (star).sum())
                 Acc["tnr"].append(((~star) & (~(self.dataset.pred[model][arg] > thresh))).sum() / (~star).sum())
-                Acc["acc"].append(
-                    (
-                        ((~star) & (~(self.dataset.pred[model][arg] > thresh))).sum()
-                        + (star & (self.dataset.pred[model][arg] > thresh)).sum()
-                    )
-                    / arg.sum()
+                if cv_idx is not None:
+                    tpr, tnr = [], []
+                    for j in range(len(cv_idx)):
+                        eval_idx = np.array([False] * len(self.dataset.ds))
+                        eval_idx[cv_idx[j]] = True
+                        star = self.dataset.y_true[arg & eval_idx]
+                        tpr.append(
+                            (star & (self.dataset.pred[model][arg & eval_idx] > thresh)).sum() / (star).sum()
+                        )
+                        tnr.append(
+                            ((~star) & (~(self.dataset.pred[model][arg & eval_idx] > thresh))).sum() / (~star).sum()
+                        )
+                    Acc_err["tpr"].append(np.std(tpr, ddof=1))
+                    Acc_err["tnr"].append(np.std(tnr, ddof=1))
+                else:
+                    Acc_err["tpr"].append(0)
+                    Acc_err["tnr"].append(0)
+
+            for k, key in enumerate(["tpr", "tnr"]):
+                ax[k].errorbar(
+                    bins_center + 0.075 * (bins_center[1] - bins_center[0]) * (l - len(models) / 2 + 0.5),
+                    1 - np.array(Acc[key]),
+                    yerr=Acc_err[key],
+                    color=self._color_model.get(model, "black"),
+                    marker="s" if model == "LS" else "o",
+                    ms=6,
+                    lw=0.75,
+                    ls="--" if model == "LS" else "-",
+                    label=self._label_model.get(model, model),
                 )
 
-            ax[0].plot(
-                bins_center, 1 - np.array(Acc["tpr"]), color=self._color_model.get(model, "black"), marker="*", lw=1
-            )
-            ax[1].plot(
-                bins_center, 1 - np.array(Acc["tnr"]), color=self._color_model.get(model, "black"), marker="$S$", lw=1
-            )
-            ax[2].plot(
-                bins_center,
-                Acc["acc"],
-                label=self._label_model.get(model, model),
-                color=self._color_model.get(model, "black"),
-                marker="o",
-                lw=1,
-            )
-
-        ax[2].set_xlabel(xlabel)
+        ax[1].set_xlabel(xlabel)
         ax[0].set_ylabel(r"$\mathrm{FNR}$")
         ax[1].set_ylabel(r"$\mathrm{FPR}$")
-        ax[2].set_ylabel(r"$\mathrm{Accuracy}$")
-        ax[2].legend(prop={"size": 15})
+        # ax[2].set_ylabel(r"$\mathrm{Accuracy}$")
+        ax[0].legend(prop={"size": 17.5})
 
         return ax

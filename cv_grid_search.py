@@ -38,19 +38,17 @@ if __name__ == "__main__":
         subsample=0.8,
         colsample_bytree=0.8,
         gamma=0.1,
-        reg_alpha=0,  # 0.1,
-        reg_lambda=0,  # 0.1,
+        reg_alpha=0,
+        reg_lambda=0,
     )
     hyper_range = dict(
         max_depth=[6, 8, 10, 12],
         min_child_weight=[4, 6, 8, 10, 12],
-        gamma=[0.1, 0.3, 0.5, 1],
-        reg_alpha=[0, 0.1, 0.3],
-        reg_lambda=[0.2, 0.3, 0.4, 0.5],
         subsample=[0.6, 0.7, 0.8, 0.9],
         colsample_bytree=[0.6, 0.7, 0.8, 0.9],
-        # subsample=[0.8, 0.85, 0.9, 0.95],
-        # colsample_bytree=[0.7, 0.75, 0.8],
+        gamma=[0.1, 0.3, 0.5, 1],
+        # reg_alpha=[0, 0.1, 0.3],
+        # reg_lambda=[0.2, 0.3, 0.4, 0.5],
     )
 
     # Round 1 - tune max_depth
@@ -108,21 +106,16 @@ if __name__ == "__main__":
         print("Aperture photometry (white)")
         # normalized dchisq + AP (white)
         X_features = ts.X_white
-        hyper_fiducial["min_child_weight"] = 8
-        hyper_fiducial["gamma"] = 0.5
-
-    if args.model == "white_br":
-        print("Aperture photometry (blue + red)")
-        # normalized dchisq + AP (blue + red)
-        X_features = ts.X_white_br
+        # hyper_fiducial["min_child_weight"] = 8
+        # hyper_fiducial["gamma"] = 0.5
 
     if args.model == "white_b+r":
         print("Aperture photometry (blue + red, trained separately)")
         X_features = ts.weighted_X_white_br
-        hyper_fiducial["weight"] = 0.4  # CV results
+        hyper_fiducial["weight"] = 0.3 # CV results (first round)
         hyper_fiducial["min_child_weight"] = 10
-        hyper_fiducial["colsample_bytree"] = 0.9
-        hyper_fiducial["subsample"] = 0.9
+        hyper_fiducial["colsample_bytree"] = 0.7
+        hyper_fiducial["subsample"] = 0.6
 
     if args.method == "test":
         # test set
@@ -148,11 +141,6 @@ if __name__ == "__main__":
             print("Aperture photometry (white)")
             # normalized dchisq + AP (white)
             X_features_test = test.X_white
-
-        if args.model == "white_br":
-            print("Aperture photometry (blue + red)")
-            # normalized dchisq + AP (blue + red)
-            X_features_test = test.X_white_br
 
         if args.model == "white_b+r":
             print("Aperture photometry (blue + red, trained separately)")

@@ -44,8 +44,8 @@ if __name__ == "__main__":
     hyper_range = dict(
         max_depth=[6, 8, 10, 12],
         min_child_weight=[4, 6, 8, 10, 12],
-        subsample=[0.6, 0.7, 0.8, 0.9],
-        colsample_bytree=[0.6, 0.7, 0.8, 0.9],
+        subsample=[0.5, 0.6, 0.7, 0.8, 0.9],
+        colsample_bytree=[0.5, 0.6, 0.7, 0.8, 0.9],
         gamma=[0.1, 0.3, 0.5, 1],
         # reg_alpha=[0, 0.1, 0.3],
         # reg_lambda=[0.2, 0.3, 0.4, 0.5],
@@ -112,10 +112,10 @@ if __name__ == "__main__":
     if args.model == "white_b+r":
         print("Aperture photometry (blue + red, trained separately)")
         X_features = ts.weighted_X_white_br
-        hyper_fiducial["weight"] = 0.3 # CV results (first round)
-        hyper_fiducial["min_child_weight"] = 10
+        hyper_fiducial["weight"] = 0.33 # CV results (first round)
+        hyper_fiducial["min_child_weight"] = 8
         hyper_fiducial["colsample_bytree"] = 0.7
-        hyper_fiducial["subsample"] = 0.6
+        hyper_fiducial["subsample"] = 0.9
 
     if args.method == "test":
         # test set

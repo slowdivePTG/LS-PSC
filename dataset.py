@@ -43,6 +43,7 @@ class DataSet:
             for k in range(8):
                 flt_masked &= np.array(self.ds[f"apflux_ivar_{flt}_{k+1}"], dtype=float) <= 0
             self.ds[f"apflux_masked_{flt}"] = flt_masked
+            self.ds[f"masked_{flt}"] = self.ds[f"apflux_masked_{flt}"] | (self.ds[f"snr_{flt}"] <= 0)
 
         # snr
         snr2_flt = {"g": 0, "r": 0, "i": 0, "z": 0}
@@ -91,8 +92,8 @@ class DataSet:
         self.X_white = np.array(X_dchi2 + self.X_white_ap("griz", ds)).T
 
         # normalized dchisq + AP (g+r) + AP (i+z), trained separately, weighted average
-        mask_gr = self.ds[f"apflux_masked_g"] & self.ds[f"apflux_masked_r"]
-        mask_iz = self.ds[f"apflux_masked_i"] & self.ds[f"apflux_masked_z"]
+        mask_gr = self.ds[f"masked_g"] & self.ds[f"masked_r"]
+        mask_iz = self.ds[f"masked_i"] & self.ds[f"masked_z"]
         self.weighted_X_white_br = np.array(
             [mask_gr] + [mask_iz] + X_dchi2 + self.X_white_ap("gr", ds) + self.X_white_ap("iz", ds)
         ).T

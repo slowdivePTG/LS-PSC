@@ -62,6 +62,14 @@ class DataSet:
         snr = np.where(snr2 > 0, snr2**0.5, 0).ravel()
         self.ds["snr"] = snr
 
+        # white_mag
+        flux_white = 0
+        for flt in "griz":
+            flux = np.where(snr2_flt[flt] > 0, 10**(-0.4 * self.ds[f"mag_{flt}"]), 0)
+            flux_white += snr2_flt[flt] * flux
+        flux_white = np.where(snr2 > 0, flux_white / (snr2 * 4), np.nan)
+        self.ds["mag_white"] = -2.5 * np.log10(flux_white)
+
         # dchisq
         for i in range(1, 5):
             with np.errstate(divide="ignore", invalid="ignore"):

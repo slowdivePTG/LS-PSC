@@ -97,6 +97,8 @@ class ModelComparisonMetrics:
             Whether to print the number of stars and galaxies in each bin. Default is True.
         **kwargs : dict, optional
             Additional keyword arguments:
+            - flt : str, optional
+                The filter to use for binning. Default is 'white' (which is weighted averaged flux).
             - lim : tuple, optional
                 The lower and upper limits of the bins. Default is None.
             - binsize : float, optional
@@ -131,8 +133,14 @@ class ModelComparisonMetrics:
                 data_to_bin = np.log10(ds.snr)
                 title = r"$\log(\mathrm{S/N})$"
             elif bins_by == "mag":
-                data_to_bin = ds.mag_r
-                title = r"$r\ [\mathrm{mag}]$"
+                flt = kwargs.get("flt", "white")
+                data_to_bin = ds[f"mag_{flt}"]
+                if flt in "griz":
+                    title = r"$r\ [\mathrm{mag}]$"
+                elif flt == "white":
+                    title = r"\texttt{white\_mag}"
+                else:
+                    raise ValueError("Invalid filter")
             else:
                 raise ValueError("bins_by must be 'snr' or 'mag'")
         else:
@@ -242,12 +250,15 @@ class ModelComparisonMetrics:
         if n_col > 1:
             for j in range(n_col):
                 ax[-1, j].set_xlabel(r"$\mathrm{Score}$")
+                precision = 0 if all(x == np.round(x) for x in bins) else 1
                 if j == 0:
-                    ax[0, j].set_title(f"{title} $\le$ ${bins[j+1]:.1f}$", fontsize=22.5)
+                    ax[0, j].set_title(f"{title} $\le$ ${bins[j+1]:.{precision}f}$", fontsize=22.5)
                 elif j == n_col - 1:
-                    ax[0, j].set_title(f"{title} $>$ ${bins[j]:.1f}$", fontsize=22.5)
+                    ax[0, j].set_title(f"{title} $>$ ${bins[j]:.{precision}f}$", fontsize=22.5)
                 else:
-                    ax[0, j].set_title(f"${bins[j]:.1f}$ $<$ {title} $\le$ ${bins[j+1]:.1f}$", fontsize=22.5)
+                    ax[0, j].set_title(
+                        f"${bins[j]:.{precision}f}$ $<$ {title} $\le$ ${bins[j+1]:.{precision}f}$", fontsize=22.5
+                    )
         for k in range(n_row):
             ax[k, 0].xaxis.set_major_locator(MultipleLocator(0.5))
             ax[k, 0].xaxis.set_minor_locator(MultipleLocator(0.05))
@@ -422,9 +433,7 @@ class ModelComparisonMetrics:
                         eval_idx = np.array([False] * len(self.dataset.ds))
                         eval_idx[cv_idx[j]] = True
                         star = self.dataset.y_true[arg & eval_idx]
-                        tpr.append(
-                            (star & (self.dataset.pred[model][arg & eval_idx] > thresh)).sum() / (star).sum()
-                        )
+                        tpr.append((star & (self.dataset.pred[model][arg & eval_idx] > thresh)).sum() / (star).sum())
                         tnr.append(
                             ((~star) & (~(self.dataset.pred[model][arg & eval_idx] > thresh))).sum() / (~star).sum()
                         )

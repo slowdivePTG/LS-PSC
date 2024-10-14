@@ -162,3 +162,7 @@ XGB_models/
 # Jupyter notebooks (temporarily)
 *Missing*.ipynb
 *Gaia*.ipynb
+playground.ipynb
+
+# legacy survey pipeline
+legacypipe/

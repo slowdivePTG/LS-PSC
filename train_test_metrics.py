@@ -63,6 +63,8 @@ class ModelComparisonMetrics:
             White=r"$\mathrm{White}$",
             hybrid=r"$\mathrm{Hybrid}$",
             Hybrid=r"$\mathrm{Hybrid}$",
+            hybrid_cat=r"$\mathrm{Hybrid\ (Cat)}$",
+            Hybrid_cat=r"$\mathrm{Hybrid\ (Cat)}$",
             LS=r"$\mathrm{LS}$",
         )
 
@@ -192,9 +194,10 @@ class ModelComparisonMetrics:
             The criterion to use for binning. Must be either 'snr' or 'mag'. Default is None.
         **kwargs : dict, optional
             Additional keyword arguments to be passed to the data_binning method.
-            - hist_bins : int, optional
+            - nbin : int, optional
             - lim : tuple, optional
             - binsize : float, optional
+            - histrange : tuple, optional
 
         Returns:
         --------
@@ -234,8 +237,8 @@ class ModelComparisonMetrics:
                     histtype="step",
                     label=r"$\mathrm{Star}$",
                     color=self._color_s,
-                    bins=kwargs.get("hist_bins", 50),
-                    range=([0, 1]),
+                    bins=kwargs.get("nbin", 50),
+                    range=kwargs.get("histrange", (0, 1)),
                     log=True,
                 )
                 ax[k, j].hist(
@@ -243,8 +246,8 @@ class ModelComparisonMetrics:
                     histtype="step",
                     label=r"$\mathrm{Galaxy}$",
                     color=self._color_g,
-                    bins=kwargs.get("hist_bins", 50),
-                    range=([0, 1]),
+                    bins=kwargs.get("nbin", 50),
+                    range=kwargs.get("histrange", (0, 1)),
                     log=True,
                 )
         if n_col > 1:

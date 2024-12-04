@@ -163,6 +163,7 @@ XGB_models/
 *Missing*.ipynb
 *Gaia*.ipynb
 playground.ipynb
+bailout.ipynb
 
 # legacy survey pipeline
 legacypipe/

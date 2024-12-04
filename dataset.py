@@ -29,7 +29,12 @@ class DataSet:
                     self.pred[k] = ds[key]
             return
 
-        self.manual_mask = manual_mask
+        # available filters in the dataset
+        # dr9 has grz filters
+        # dr10 has griz filters
+        flt_avail = [mag.split("_")[-1] for mag in ds.keys() if "mag" in mag]
+        # if the filter is not available, manually mask it
+        self.manual_mask = [m for m in manual_mask] + [flt for flt in "griz" if flt not in flt_avail]
 
         # missing dchisq
         self.ds["missing_dchisq_1"] = self.ds.dchisq_1 == 0
@@ -40,10 +45,14 @@ class DataSet:
         # missing apflux
         for flt in "griz":
             flt_masked = 1
-            for k in range(8):
-                flt_masked &= np.array(self.ds[f"apflux_ivar_{flt}_{k+1}"], dtype=float) <= 0
-            self.ds[f"apflux_masked_{flt}"] = flt_masked
-            self.ds[f"masked_{flt}"] = self.ds[f"apflux_masked_{flt}"] | (self.ds[f"snr_{flt}"] <= 0)
+            if flt in flt_avail:  # if the filter is available
+                for k in range(8):
+                    flt_masked &= np.array(self.ds[f"apflux_ivar_{flt}_{k+1}"], dtype=float) <= 0
+                self.ds[f"apflux_masked_{flt}"] = flt_masked
+                self.ds[f"masked_{flt}"] = self.ds[f"apflux_masked_{flt}"] | (self.ds[f"snr_{flt}"] <= 0)
+            else:  # if the filter is not available (i band in dr9 data) - manually mask
+                self.ds[f"apflux_masked_{flt}"] = np.ones(len(self.ds), dtype=bool)
+                self.ds[f"masked_{flt}"] = np.ones(len(self.ds), dtype=bool)
 
         # snr
         snr2_flt = {"g": 0, "r": 0, "i": 0, "z": 0}
@@ -65,7 +74,9 @@ class DataSet:
         # white_mag
         flux_white = 0
         for flt in "griz":
-            flux = np.where(snr2_flt[flt] > 0, 10**(-0.4 * self.ds[f"mag_{flt}"]), 0)
+            if flt in self.manual_mask:  # skip if manually masked
+                continue
+            flux = np.where(snr2_flt[flt] > 0, 10 ** (-0.4 * self.ds[f"mag_{flt}"]), 0)
             flux_white += snr2_flt[flt] * flux
         flux_white = np.where(snr2 > 0, flux_white / (snr2 * 4), np.nan)
         self.ds["mag_white"] = -2.5 * np.log10(flux_white)

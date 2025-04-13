@@ -167,3 +167,6 @@ bailout.ipynb
 
 # legacy survey pipeline
 legacypipe/
+
+# Notebook for making presentation plots
+presentation.ipynb

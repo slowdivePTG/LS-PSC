@@ -20,6 +20,7 @@ if __name__ == "__main__":
     parser.add_argument("--eta", help="learning rate", type=float, default=0.02)
     parser.add_argument("--n_estimators", help="number of trees", type=int, default=1000)
     parser.add_argument("--weight", help="weight of the hybrid model", type=float, default=0.3)
+    parser.add_argument("--n_jobs", help="number of jobs", type=int, default=5)
 
     args = parser.parse_args()
 
@@ -72,7 +73,7 @@ if __name__ == "__main__":
     ##### cross validation #####
     # parameter grid
 
-    job_dict = {"N_splits": 5, "N_jobs": -1}
+    job_dict = {"N_splits": 5, "N_jobs": args.n_jobs}
 
     #############################
     if args.model == "fiducial":

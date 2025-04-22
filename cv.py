@@ -180,7 +180,7 @@ def Kfold_CV(
             verbose=3,
             cv=StratifiedKFold(n_splits=N_splits, shuffle=True, random_state=1919810),
             n_jobs=N_jobs,
-            scoring=make_scorer(FoM_score, needs_proba=True),
+            scoring=make_scorer(FoM_score, response_method="predict_proba"),
             error_score="raise",
         )
 

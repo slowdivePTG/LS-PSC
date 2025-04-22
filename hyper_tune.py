@@ -35,11 +35,11 @@ if __name__ == "__main__":
         colsample_bytree=0.8,
     )
     hyper_range = dict(
-        max_depth=[4, 6, 8, 10, 12],
+        max_depth=[4, 6, 8, 10, 12, 15],
         min_child_weight=[4, 6, 8, 10, 12],
         gamma=[0.1, 0.3, 0.5, 1.0, 2.0],
-        subsample=[0.5, 0.6, 0.7, 0.8, 0.9],
-        colsample_bytree=[0.5, 0.6, 0.7, 0.8, 0.9],
+        subsample=[0.6, 0.7, 0.8, 0.9],
+        colsample_bytree=[0.6, 0.7, 0.8, 0.9],
     )
 
     # Round 1 - tune max_depth and min_child_weight

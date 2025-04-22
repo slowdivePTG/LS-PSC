@@ -165,3 +165,7 @@ legacypipe/
 
 # Notebook for making presentation plots
 presentation.ipynb
+
+# Sbatch files and output
+submit*.sh
+XGB_*.txt

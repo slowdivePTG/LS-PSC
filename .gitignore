@@ -154,16 +154,11 @@ orcid-ID.png
 
 # Data files
 Data/
-Figure/
-COSMOS_ACS_catalog/
-*.fits
+Figures/
 XGB_models/
 
 # Jupyter notebooks (temporarily)
-*Missing*.ipynb
-*Gaia*.ipynb
-playground.ipynb
-bailout.ipynb
+*.ipynb
 
 # legacy survey pipeline
 legacypipe/

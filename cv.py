@@ -20,14 +20,16 @@ class WeightedXGBClassifier(BaseEstimator, ClassifierMixin):
     """
 
     def __init__(self, clf1=None, clf2=None, weight=0.5, **params):
+        self.eval_metric = params.pop("eval_metric", None)
+        self.weight = weight
+        if self.eval_metric is None:
+            self.eval_metric = "logloss"
+        self.early_stopping_rounds = params.pop("early_stopping_rounds", None)
+
         if clf1 is None:
             self.clf1 = XGBClassifier(**params)
         if clf2 is None:
             self.clf2 = XGBClassifier(**params)
-        self.weight = weight
-        self.eval_metric = params.pop("eval_metric", None)
-        if self.eval_metric is None:
-            self.eval_metric = ["logloss", "error"]
         self.kwargs = self.clf1.get_params()
 
     def set_params(self, **params):
@@ -40,6 +42,7 @@ class WeightedXGBClassifier(BaseEstimator, ClassifierMixin):
 
     def fit(self, X, y, **kwargs):
         self.classes_ = np.array([0, 1])
+
         # First 2 columns indicate when each classifier is masked
         # The rest of the columns are the features
         X_train = X[:, 2:]
@@ -50,37 +53,73 @@ class WeightedXGBClassifier(BaseEstimator, ClassifierMixin):
 
         if "eval_set" in kwargs:
             eval_set = kwargs.pop("eval_set")
-            eval_set_1 = [
-                (eval_set[0][0][:, 2:-7], eval_set[0][1]),
-                (eval_set[1][0][:, 2:-7], eval_set[1][1]),
-            ]
-            eval_set_2 = [
-                (
-                    np.concatenate([eval_set[0][0][:, 2:-14], eval_set[0][0][:, -7:]], axis=1),
-                    eval_set[0][1],
-                ),
-                (
-                    np.concatenate([eval_set[1][0][:, 2:-14], eval_set[1][0][:, -7:]], axis=1),
-                    eval_set[1][1],
-                ),
-            ]
-
+            self.early_stopping_rounds = kwargs.pop("early_stopping_rounds", self.early_stopping_rounds)
             verbose = kwargs.pop("verbose", False)
-            self.clf1.fit(
-                X_train_1,
-                y,
-                eval_set=eval_set_1,
-                verbose=verbose,
-            )
-            self.clf2.fit(
-                X_train_2,
-                y,
-                eval_set=eval_set_2,
-                verbose=verbose,
-            )
+
+            # Initialize variables for manual early stopping
+            best_score = float("-inf")
+            best_iteration = 0
+            no_improvement_rounds = 0
+            self.eval_results_ = {}
+
+            # Initialize eval_results_ properly for both training and validation sets
+            self.eval_results_ = {
+                "validation_0": {self.eval_metric: []},  # Training set results
+                "validation_1": {self.eval_metric: []}   # Validation set results
+            }
+
+            # Maximum number of boosting rounds
+            max_rounds = self.kwargs.get("n_estimators", 1000)
+
+            # Training in iterations
+            for iteration in range(50, max_rounds + 1, 50):  # Step size of 50
+                # Update number of estimators for both models
+                self.clf1.n_estimators = iteration
+                self.clf2.n_estimators = iteration
+
+                # Fit both models without early stopping
+                self.clf1.fit(X_train_1, y, eval_set=None)
+                self.clf2.fit(X_train_2, y, eval_set=None)
+
+                # Evaluate combined model performance on validation set
+                train_score = self._calculate_metric(x=eval_set[0][0], y_true=eval_set[0][1])
+                val_score = self._calculate_metric(x=eval_set[1][0], y_true=eval_set[1][1])
+
+                # Store the scores
+                self.eval_results_["validation_0"][self.eval_metric].append(train_score)
+                self.eval_results_["validation_1"][self.eval_metric].append(val_score)
+
+                if verbose:
+                    print(f"[{iteration}] Combined validation score: {val_score:.4f}")
+
+                # Track the best performance
+                if val_score > best_score:
+                    best_score = val_score
+                    best_iteration = iteration
+                    no_improvement_rounds = 0
+                else:
+                    no_improvement_rounds += 50
+
+                # Early stopping check
+                if self.early_stopping_rounds is not None and no_improvement_rounds >= self.early_stopping_rounds:
+                    if verbose:
+                        print(f"Early stopping triggered at iteration {iteration}")
+                    break
+
+            # Store best iteration
+            self.best_iteration_ = best_iteration
+
+            # Final fit with best iteration
+            self.clf1.n_estimators = self.best_iteration_
+            self.clf2.n_estimators = self.best_iteration_
+            self.clf1.fit(X_train_1, y)
+            self.clf2.fit(X_train_2, y)
+
         else:
             self.clf1.fit(X_train_1, y)
             self.clf2.fit(X_train_2, y)
+
+        return self
 
     def predict_proba(self, X):
         X_mask_clf1 = X[:, 0]
@@ -106,6 +145,40 @@ class WeightedXGBClassifier(BaseEstimator, ClassifierMixin):
             **self.kwargs,
         }
         return params
+
+    def _calculate_metric(self, x, y_true):
+        from sklearn.metrics import (
+            f1_score,
+            accuracy_score,
+            precision_score,
+            recall_score,
+            roc_auc_score,
+            log_loss,
+        )
+
+        # Based on probabilities
+        if self.eval_metric in ["logloss", "roc_auc", "FoM"]:
+            y_pred = self.predict_proba(x)[:, 1]
+        # Based on labels
+        elif self.eval_metric in ["f1", "accuracy", "precision", "recall"]:
+            y_pred = self.predict(x)
+        else:
+            raise ValueError(f"Unsupported eval_metric: {self.eval_metric}")
+
+        if self.eval_metric == "logloss":
+            return log_loss(y_true, y_pred)
+        if self.eval_metric == "f1":
+            return f1_score(y_true, y_pred, average="macro")
+        elif self.eval_metric == "accuracy":
+            return accuracy_score(y_true, y_pred)
+        elif self.eval_metric == "precision":
+            return precision_score(y_true, y_pred, average="macro")
+        elif self.eval_metric == "recall":
+            return recall_score(y_true, y_pred, average="macro")
+        elif self.eval_metric == "roc_auc":
+            return roc_auc_score(y_true, y_pred)
+        elif self.eval_metric == "FoM":
+            return FoM_score(y_true, y_pred)
 
 
 def FoM_score(y_true, y_score, FPR=0.005):

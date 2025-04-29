@@ -28,32 +28,31 @@ if __name__ == "__main__":
     hyper_fiducial = dict(
         n_estimators=args.n_estimators,
         eta=args.eta,
-        # max_depth=8,
-        # min_child_weight=8,
+        max_depth=10,
+        min_child_weight=6,
         gamma=0.1,
         subsample=0.8,
         colsample_bytree=0.8,
     )
     hyper_range = dict(
-        max_depth=[4, 6, 8, 10, 12, 15],
+        max_depth=[6, 8, 10, 12, 14, 16, 18],
         min_child_weight=[4, 6, 8, 10, 12],
         gamma=[0.1, 0.3, 0.5, 1.0, 2.0],
-        subsample=[0.6, 0.7, 0.8, 0.9],
-        colsample_bytree=[0.6, 0.7, 0.8, 0.9],
+        subsample=[0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+        colsample_bytree=[0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
     )
+
+    # Round 0 - default parameters
+    param_grid = dict()
 
     # Round 1 - tune max_depth and min_child_weight
-    param_grid = dict(
-        max_depth=hyper_range["max_depth"],
-        min_child_weight=hyper_range["min_child_weight"],
-    )
+    # param_grid = dict(
+    #     max_depth=hyper_range["max_depth"],
+    #     min_child_weight=hyper_range["min_child_weight"],
+    # )
 
     # Round 2 - tune gamma
-    # param_grid = dict(
-    #     max_depth=[hyper_fiducial["max_depth"]],
-    #     min_child_weight=[hyper_fiducial["min_child_weight"]],
-    #     gamma=hyper_range["gamma"],
-    # )
+    # param_grid = dict(gamma=hyper_range["gamma"])
 
     # Round 3 - tune subsample, colsample_bytree
     # param_grid = dict(
@@ -85,23 +84,28 @@ if __name__ == "__main__":
         print("Apeture photometry")
         # normalized dchisq + AP
         X_features = ts.X_AP[args.filters]
-        # hyper_fiducial["colsample_bytree"] = 0.5
-        # hyper_fiducial["gamma"] = 3
+        # hyper_fiducial["max_depth"] = 18
+        # hyper_fiducial["min_child_weight"] = 10
+        # hyper_fiducial["gamma"] = 0.1
 
     #############################
     if args.model == "white":
         print("Aperture photometry (white)")
         # normalized dchisq + AP (white)
         X_features = ts.X_white
-        # hyper_fiducial["min_child_weight"] = 4
-        # hyper_fiducial["colsample_bytree"] = 0.9
-        # hyper_fiducial["subsample"] = 0.7
-        # hyper_fiducial["gamma"] = 1e-1
+        # hyper_fiducial["max_depth"] = 12
+        # hyper_fiducial["min_child_weight"] = 6
+        # hyper_fiducial["gamma"] = 1.0
 
     if args.model == "white_b+r":
         print("Aperture photometry (blue + red, trained separately)")
-        X_features = ts.weighted_X_white_b_r
+        X_features = ts.weighted_X_white_br
         hyper_fiducial["weight"] = args.weight  # CV results
+        hyper_fiducial["max_depth"] = 12
+        hyper_fiducial["min_child_weight"] = 6
+        hyper_fiducial["gamma"] = 0.5
+        # hyper_fiducial["subsample"] = 0.6
+        # hyper_fiducial["colsample_bytree"] = 0.8
 
     # evaluation sets
     if args.model == "white_b+r":

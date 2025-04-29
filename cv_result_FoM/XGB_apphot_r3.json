@@ -1,0 +1,78 @@
+{
+    "model": "apphot",
+    "res": {
+        "classifier": "XGBoost",
+        "scoring": "FoM",
+        "accuracy": [
+            0.9721824036563831,
+            0.9741347072755225,
+            0.9728881871442224,
+            0.9731790418415257,
+            0.9723688037561806
+        ],
+        "FoM": [
+            0.730014360938248,
+            0.7562844146516638,
+            0.7388702728578267,
+            0.7424605074198181,
+            0.7324078506462423
+        ],
+        "ROC_AUC": [
+            0.9762259394170767,
+            0.9778659595994822,
+            0.9751263649959199,
+            0.9761066116379664,
+            0.975893900558812
+        ],
+        "best_params": [
+            {
+                "colsample_bytree": 0.4,
+                "subsample": 0.9
+            },
+            {
+                "colsample_bytree": 0.4,
+                "subsample": 0.7
+            },
+            {
+                "colsample_bytree": 0.7,
+                "subsample": 0.5
+            },
+            {
+                "colsample_bytree": 0.6,
+                "subsample": 0.8
+            },
+            {
+                "colsample_bytree": 0.4,
+                "subsample": 0.9
+            }
+        ]
+    },
+    "param": {
+        "n_estimators": 1300,
+        "eta": 0.02,
+        "max_depth": 18,
+        "min_child_weight": 10,
+        "gamma": 0.1,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8
+    },
+    "param_grid": {
+        "subsample": [
+            0.4,
+            0.5,
+            0.6,
+            0.7,
+            0.8,
+            0.9
+        ],
+        "colsample_bytree": [
+            0.4,
+            0.5,
+            0.6,
+            0.7,
+            0.8,
+            0.9
+        ]
+    },
+    "filters": "grz"
+}

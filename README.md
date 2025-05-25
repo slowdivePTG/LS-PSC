@@ -1,1 +1,17 @@
-In this DESI Legacy Imaging Surveys Point Source Catalog (LS-PSC), we provide a machine-learning score for the probability of a LS target being an unresolved, point source. This is a morphological classifier based on the LS photometry, and provide classification for $3\times10^9$ LS targets. LS-PSC is integrated into the real-time alert stream of the La Silla Schmidt Southern Survey (LS4).
+In this DESI Legacy Imaging Surveys Point Source Catalog (LS-PSC), we provide a machine-learning score for the probability of a LS target being an unresolved, point source. This is a morphological classifier based on the LS photometry, and provide classification for $3\times10^9$ LS targets. LS-PSC is integrated into the real-time alert stream of [the La Silla Schmidt Southern Survey (LS4)](https://sites.northwestern.edu/ls4/).
+
+# Query sources with API
+Scores can be queried from the [database](https://ls-xgboost.lbl.gov) via API requests.
+
+```python
+import requests
+
+def get_sources(ra, dec, radius, mag_limit=None):
+    base_url = "https://ls-xgboost.lbl.gov/getsources"
+    url = f"{base_url}/{ra}/{dec}/{radius}"
+    if mag_limit is not None:
+        url += f"/{mag_limit}"
+    response = requests.get(url)
+    response.raise_for_status()
+    return response.json()
+```

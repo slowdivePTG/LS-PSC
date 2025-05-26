@@ -6,7 +6,24 @@ Scores can be queried from the [database](https://ls-xgboost.lbl.gov) via API re
 ```python
 import requests
 
-def get_sources(ra, dec, radius, mag_limit=None):
+def get_sources(ra: float, dec: float, radius: float, mag_limit: float=None) -> dict:
+    """
+    Cross match to the LS-PSC catalog and get score sources.
+
+    Parameters
+    ----------
+    ra, dec : float
+        Coordinates in degrees.
+    radius: float
+        Search radius in degrees.
+    mag_limit: float, optional
+        Magnitude limit for the search (in white_mag)
+
+    Returns
+    -------
+    dict
+        A dictionary containing the sources found within the searching radius.
+    """
     base_url = "https://ls-xgboost.lbl.gov/getsources"
     url = f"{base_url}/{ra}/{dec}/{radius}"
     if mag_limit is not None:
@@ -14,6 +31,7 @@ def get_sources(ra, dec, radius, mag_limit=None):
     response = requests.get(url)
     response.raise_for_status()
     return response.json()
+
 ```
 
 # Citation

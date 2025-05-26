@@ -15,3 +15,7 @@ def get_sources(ra, dec, radius, mag_limit=None):
     response.raise_for_status()
     return response.json()
 ```
+
+# Citation
+If you use LS-PSC in your research, please cite the following publication:
+- Liu et al. (2025): [arXiv](https://arxiv.org/abs/2505.17174)

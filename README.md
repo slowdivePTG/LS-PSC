@@ -15,7 +15,7 @@ def get_sources(ra: float, dec: float, radius: float, mag_limit: float=None) -> 
     ra, dec : float
         Coordinates in degrees.
     radius: float
-        Search radius in degrees.
+        Search radius in arcseconds (limit = 300 arcsec).
     mag_limit: float, optional
         Magnitude limit for the search (in white_mag)
 

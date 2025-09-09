@@ -36,4 +36,4 @@ def get_sources(ra: float, dec: float, radius: float, mag_limit: float=None) -> 
 
 # Citation
 If you use LS-PSC in your research, please cite the following publication:
-- Liu et al. (2025): [arXiv](https://arxiv.org/abs/2505.17174)
+- Liu et al. 2025, [PASP, 137, 084501](https://iopscience.iop.org/article/10.1088/1538-3873/adf7db)

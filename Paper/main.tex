@@ -27,7 +27,7 @@
 %%
 %% using aastex version 6.3
 % \documentclass[linenumbers,twocolumn]{aastex631}
-\documentclass[twocolumn]{aastex631}
+\documentclass[twocolumn,tighten]{aastex631}
 \usepackage{CJK}
 \usepackage{amsmath}
 \usepackage{multirow}
@@ -131,6 +131,7 @@
 
 \newcommand{\todo}[1]{{\color{magenta}{\bf TODO:} #1}}
 \newcommand{\chang}[1]{{\color{orange}\bf #1}}
+\newcommand{\rev}[1]{{\bf #1}}
 
 \graphicspath{{./}{Figures/}}
 
@@ -320,7 +321,7 @@ Separating resolved and unresolved sources in large imaging surveys is a fundame
 
 \section{Introduction} \label{sec:intro}
 
-Many wide-field imaging surveys have now cataloged $>$$10^9$ objects, including the Panoramic Survey Telescope and Rapid Response System \citep[Pan-STARRS;][]{PanSTARRS_2016}, the Dark Energy Spectroscopic Instrument (DESI) Legacy Imaging Surveys \citep[LS;][]{LS_2019}, and Gaia \citep{Gaia_2016,GaiaDR3_2023}. Object classification, e.g., separating foreground stars from distant galaxies, is a critical step for analyzing the sources observed by these surveys. Spectroscopic classifications are only available for $<$1\% of the imaged sources \citep{DESI_DR1_2025}. A classification framework based solely on imaging data is the only feasible way to separate the billions of resolved sources (e.g., galaxies and nebulae) from unresolved, point-like sources (i.e., stars and quasars; QSOs). Sufficiently bright and nearby galaxies can be easily distinguished via visual inspection of their morphology \citep{Lintott_2008} or simple heuristic cuts in the space of photometric properties \citep[e.g.,][]{Kron_1980, Leauthaud_2007}. But for the numerous objects barely above the detection limit of a survey, separating resolved sources from the unresolved remains a challenging task, and machine-learning (ML) approaches have been widely explored as a solution \citep[e.g., \citealp{Bertin_1996,Philip_2002, Ball_2006, Henrion_2011, Vasconcellos_2011, Kovacs_2015, Miller_2017, Tachibana_2018, Stoppa_2023, Miller_2021, Beck_2022}; see][for a comprehensive review]{Sevilla-Noarbe_2018}.
+Many wide-field imaging surveys have now cataloged $>$$10^9$ objects, including the Panoramic Survey Telescope and Rapid Response System \citep[Pan-STARRS;][]{PanSTARRS_2016}, the Dark Energy Spectroscopic Instrument (DESI) Legacy Imaging Surveys \citep[LS;][]{LS_2019}, and Gaia \citep{Gaia_2016,GaiaDR3_2023}. Object classification, e.g., separating foreground stars from distant galaxies, is a critical step for analyzing the sources observed by these surveys. Spectroscopic classifications are only available for $<$1\% of the imaged sources \citep{DESI_DR1_2025}. A classification framework based solely on imaging data is the only feasible way to separate the billions of resolved sources (e.g., galaxies and nebulae) from unresolved, point-like sources (i.e., stars and quasars; QSOs). Sufficiently bright and nearby galaxies can be easily distinguished via visual inspection of their morphology \citep{Lintott_2008} or simple heuristic cuts in the space of photometric properties \citep[e.g.,][]{Kron_1980, Leauthaud_2007}. But for the numerous objects barely above the detection limit of a survey, separating resolved sources from the unresolved remains a challenging task, and machine-learning (ML) approaches have been widely explored as a solution \citep[e.g., \citealp{SExtractor_1996,Philip_2002, Ball_2006, Henrion_2011, Vasconcellos_2011, Kovacs_2015, Miller_2017, Tachibana_2018, Stoppa_2023, Miller_2021, Beck_2022}; see][for a comprehensive review]{Sevilla-Noarbe_2018}.
 
 Recent wide-field time-domain surveys, such as the All-Sky Automated Survey for Supernovae \citep{ASASSN_2014}, the Asteroid Terrestrial Last-Alert
 System \citep{ATLAS_2011, ATLAS_2018},
@@ -336,7 +337,7 @@ Throughout the paper, we interchangeably use the term stars to refer to unresolv
 We have released scripts and notebooks for all the queries and analysis to produce the results in this study at \url{https://github.com/slowdivePTG/LS-PSC}. The final catalog containing our star--galaxy scores of the entire LS \dr{10} is available at \url{https://ls-xgboost.lbl.gov/}.
 
 \section{Model Data}\label{sec:data}
-LS \dr{10} data were obtained from the The Astro Data Lab \citep{Fitzpatrick_2014,Nikutta_2020}. LS catalogs two different flux measurements, the \texttt{Tractor}\footnote{\url{https://github.com/dstndstn/tractor}} flux (in \texttt{ls\_dr10.tractor}) and the aperture flux (in \texttt{ls\_dr10.apflux}). In \texttt{Tractor} each source is fit by up to 5 morphological models: point sources (PSF), round exponential galaxies (REX), de Vaucouleurs (DEV) profiles, exponential (EXP) profiles, and S\'ersic (SER) profiles. The flux from the best-fit model is then provided.\footnote{The strategy of determining the optimal morphological model is summarized at \url{https://www.legacysurvey.org/dr10/description/\#morphological-classification}.} Note that the more morphologically complicated models are not fit to sources that are well fit by simple profiles (e.g., PSF). In Section~\ref{sec:features} we will explain the \texttt{Tractor} procedure in more detail, which we use to construct features for our machine-learning model. Aperture fluxes are measured in 8 different aperture sizes in $griz$ filters: 0\farcs5, 0\farcs75, 1\farcs0, 1\farcs5, 2\farcs0, 3\farcs5, 5\farcs0, and 7\farcs0, with no curve-of-growth correction.
+LS \dr{10} data were obtained from the Astro Data Lab \citep{Fitzpatrick_2014,Nikutta_2020}. LS catalogs two different flux measurements, the \texttt{Tractor}\footnote{\url{https://github.com/dstndstn/tractor}} flux (in \texttt{ls\_dr10.tractor}) and the aperture flux (in \texttt{ls\_dr10.apflux}). In \texttt{Tractor} each source is fit by up to 5 morphological models: point sources (PSF), round exponential galaxies (REX), de Vaucouleurs (DEV) profiles, exponential (EXP) profiles, and S\'ersic (SER) profiles. The flux from the best-fit model is then provided.\footnote{The strategy of determining the optimal morphological model is summarized at \url{https://www.legacysurvey.org/dr10/description/\#morphological-classification}.} Note that the more morphologically complicated models are not fit to sources that are well fit by simple profiles (e.g., PSF). In Section~\ref{sec:features} we will explain the \texttt{Tractor} procedure in more detail, which we use to construct features for our machine-learning model. Aperture fluxes are measured in 8 different aperture sizes in $griz$ filters: 0\farcs5, 0\farcs75, 1\farcs0, 1\farcs5, 2\farcs0, 3\farcs5, 5\farcs0, and 7\farcs0, with no curve-of-growth correction.
 
 % Compared to previous DRs, LS \dr{10} includes $i$-band observations from Dark Energy Camera (DECam) observations covering $>$17,000\,$\deg^2$ in the southern LS footprint (declination $\le32.375\degr$). 
 LS \dr{10} has a southern and a northern footprint divided at declination $=32.375\degr$. The southern footprint is covered by the 
@@ -429,8 +430,7 @@ The uncertainty in the total proper motion $\sigma_\mu$ can be calculated with
 \end{equation*}
 where $\rho(\mu_{\alpha*}\mu_\delta)$ ({\tt pmra\_pmdec\_corr} in the database) is the correlation coefficient between $\mu_{\alpha*}$ and $\mu_\delta$. We require either the parallax significance or total proper motion significance $\ge$5, removing 32,277,565 sources. 
 %We further require the source to pass the filters defined by Equations (C.1) and (C.2) in \cite{Lindegren_2018}, to eliminate targets with potential issues in BP and RP photometry. These cuts exclude 26,880,137 targets. 
-We further require the sources to pass the filter defined by Equation (C.2) in \cite{Lindegren_2018} to eliminate 24,220,059 targets with potential issues in BP and RP photometry.
-Again, we remove 292,486 sources with no valid detection in any filter, leaving 178,453,652 sources matched with reliable Gaia stars. Finally, we remove 1,971,413 potential artifacts near bright Gaia stars. The final Gaia test set contains 176,482,239 sources.
+We further require the sources to pass the filter defined by Equation (C.2) in \cite{Lindegren_2018} to eliminate 24,220,059 targets with potential issues in BP and RP photometry {due to crowding, most of which are faint sources in high stellar density fields \citep{Gaia_2018}. By cross matching sources with a significant parallax or proper motion with DESI, we find that $\sim$5\% of sources failing (C.2) are classified as galaxies, whereas galaxy contamination is negligible among those passing (C.2).} Again, we remove 292,486 sources with no valid detection in any filter, leaving 178,453,652 sources matched with reliable Gaia stars. Finally, we remove 1,971,413 potential artifacts near bright Gaia stars. The final Gaia test set contains 176,482,239 sources.
 
 \section{Model Features}\label{sec:features}
 LS provides the morphological typing by fitting each source to multiple morphological profiles (PSF, REX, DEV, EXP, SER) and finding the optimal model. Sources that are best fit to a PSF model are considered as unresolved, point-like objects, whereas resolved, extended sources should be better fit to other morphological models. Throughout the paper we will compare the performance of our machine learning model to the LS morphological typing. 
@@ -519,7 +519,7 @@ which are set to NaN if both $w_f=0$. In this way, each sub-model extracts infor
 \end{equation}
 Here $\alpha_\mathrm{hyb}\in(0,1)$ is a parameter of the relative importance between the two sub-models to be determined in the training. The weights $\mathrm{det}_{gr}, \mathrm{det}_{iz}\in\{0, 1\}$ indicate whether both filters adopted in each sub-model are missing or not. Following this definition, even if a source is observed in only 1 filter, e.g., $z$, then \texttt{apratio\_iz} would still have meaningful values and the model would simply present $\mathrm{score}_{iz}$ as the output.
 
-We will show in Section~\ref{sec:results} that when there are few missing values in the input, the $grz$ model performs the best in separating resolved sources from the unresolved. However, in a more realistic dataset where a non-negligible fraction of sources are not observed in a few filters, the $grz$ model dramatically downgrades and the Hybrid model performs significantly better, so we will use the Hybrid model to produce the LS resolved--unresolved source catalog.
+Features included in each \xgboost\ model are summarized in Table~\ref{tab:features}. We will show in Section~\ref{sec:results} that when there are few missing values in the input, the $grz$ model performs the best in separating resolved sources from the unresolved. However, in a more realistic dataset where a non-negligible fraction of sources are not observed in a few filters, the $grz$ model dramatically downgrades and the Hybrid model performs significantly better, so we will use the Hybrid model to produce the LS resolved--unresolved source catalog.
 
 Finally we note that, unlike many other surveys such as PS1, LS does not provide either PSF or \cite{Kron_1980} photometry, so we cannot build features based on the ratio of fluxes measured from different photometric methods, demonstrated to be useful in star--galaxy separation \citepalias{Tachibana_2018}. LS also presents parameters related to the size and shape of the source (e.g., half-light radius and ellipticity), but as they are only calculated for sources which are best fit to an extended profile, we exclude them from our models.
 
@@ -592,6 +592,7 @@ Finally we note that, unlike many other surveys such as PS1, LS does not provide
 \tablecomments{All three models include \texttt{delta\_dchisq}(gal) and \texttt{mask}, and the major difference between the them is the type of aperture flux adopted in constructing \texttt{apratio}. The number of shared and unique features are indicated. The column Definition refers to the equations where the corresponding features are defined.}
 \end{deluxetable*}
 
+
 \section{Model Training}\label{sec:model}
 
 \xgboost\ \citep{XGBoost_2016} is a robust and scalable machine learning system based on Gradient Boosted Decision Trees \citep{Friedman_2001}. It allows efficient handling of millions of sources, and naturally deals with missing values in the input with a sparsity-aware algorithm. It has been applied to tabulated data products of imaging surveys for multiple classification tasks \citep[e.g.,][]{Jin_2019, Nakoneczny_2021, Fu_2024, vonMarttens_2024, Zeraatgari_2024}, including star--galaxy separation \citep{Stoppa_2023}.
@@ -619,7 +620,10 @@ The median value of each parameter over the 5 folds is adopted as the optimal va
 We note that the FoM evaluated on the sources withheld in the outer loop does not increase significantly once \texttt{n\_estimator} is determined before the first round of the grid search.
 This indicates that the FoM is not highly sensitive to the choice of the hyperparameters controlling the depth of the model, so we refrain from exploring a finer grid.
 
-The weight in the hybrid model, $\alpha_\mathrm{hyb}$, is determined separately in an iterative way. To begin with, we presume the two sub-models in the hybrid models both adopt the default hyperparameters, with which we predict the scores for both sub-models using the same 5-fold CV. Then we figure out the $\alpha_\mathrm{hyb}$ to give rise to the highest mean FoM over the 5 validation sets by searching a grid from 0 to 1 with a step size of 0.01. Fixing $\alpha_\mathrm{hyb}$, we then search for the optimal \xgboost\ parameters using the same method, with which we update the value of $\alpha_\mathrm{hyb}$. In practice, $\alpha_\mathrm{hyb}$ converges to 0.33 after the second round, which yields an FoM $= 0.707\pm0.011$. Yet for all $\alpha_\mathrm{hyb}\simeq0.2$--0.5, the the corresponding FoM does not significantly drop, i.e., remains within the standard deviation of the optimal value.
+The weight in the hybrid model, $\alpha_\mathrm{hyb}$, is determined separately in an iterative way. To begin with, we presume the two sub-models in the hybrid models both adopt the default hyperparameters, with which we predict the scores for both sub-models using the same 5-fold CV. Then we figure out the $\alpha_\mathrm{hyb}$ to give rise to the highest mean FoM over the 5 validation sets by searching a grid from 0 to 1 with a step size of 0.01. Fixing $\alpha_\mathrm{hyb}$, we then search for the optimal \xgboost\ parameters using the same method, with which we update the value of $\alpha_\mathrm{hyb}$. In practice, $\alpha_\mathrm{hyb}$ converges to 0.33 after the second round, which yields an FoM $= 0.707\pm0.011$. Yet for all $\alpha_\mathrm{hyb}\simeq0.2$--0.5, the corresponding FoM does not significantly drop, i.e., remains within the standard deviation of the optimal value. {To assess the robustness of our chosen $\alpha_\mathrm{hyb}$, we determine the optimal $\alpha_\mathrm{hyb}$ value in the DESI and SDSS test sets, fixing all other hyperparameters and using the same procedure as described above. Both test sets cover a much wider region of the sky than the training set. For DESI (SDSS), the highest FoM is 0.9792 (0.9718) at $\alpha_\mathrm{hyb}= 0.51$ (0.57), which represents a minor ($\sim$0.1\%) improvement relative to the FoM $=$ 0.9778 (0.9704) at $\alpha_\mathrm{hyb}= 0.33$. This demonstrates that the model performance is not strongly dependent on the choice of $\alpha_\mathrm{hyb}$, given that the FoM does not change substantially when $\alpha_\mathrm{hyb}$ changes from 0.33 to $\sim$0.5. For the final model we adopt $\alpha_\mathrm{hyb} = 0.33$ to make the final catalog classifications.
+
+% while not exactly optimal, remains robust over different sky regions.
+}
 
 % The pseudocode below summarizes the hyperparameter tuning process.
 
@@ -706,7 +710,7 @@ All three \xgboost\ models show a near-perfect ability of classifying resolved--
 
 The difference in model performance on faint objects ($\texttt{white\_mag}\ge21$\,mag) are further addressed in Figure~\ref{fig:FPFN_mag}. We show the fraction of misclassified stars and galaxies of the \xgboost\ models, i.e., the false negative rate (FNR) and the FPR at a classification threshold of 0.5, compared to the LS model. The \xgboost\ models correctly identify $\gtrsim$99\% of galaxies across all magnitude bins at the expense of missing the majority of faint stars ($\texttt{white\_mag}\ge24$\,mag). In contrast, the LS model misclassifies more than 20\% of the galaxies, while successfully recovering $\gtrsim$80\% of the stars. The different approach of each model explains this discrepancy in performance. The \xgboost\ models are trained by minimizing the loss on the training set as a whole, whereas LS morphological types are determined via a hypothesis-test for each source. The null hypothesis is that each source is an unresolved PSF and the LS morphological model only rejects the hypothesis when extended profiles significantly improve the goodness of fit. As shown in Figure~\ref{fig:bias} nature produces far more faint galaxies than stars so the \xgboost\ models will tend towards the majority class. Meanwhile, for the faintest targets improvements in the goodness of fit (\texttt{dchisq}) are limited by the S/N, making it progressively more difficult to reject the PSF null hypothesis. Thus, we expect our \xgboost\ classifiers to show a much higher overall accuracy compared to the LS model, especially for faint targets (see Figure~\ref{fig:acc}).
 
-While the \xgboost\ models are generally not good at identifying faint stars, Figures~\ref{fig:roc_mag} and~\ref{fig:FPFN_mag} suggest that knowledge from individual filters can boost model performance. Between 24--25\,mag, the $grz$ model consistently identifies $>$10\% more stars than the White model at the same FPR. By investigating the importance of features (defined as the average gain in accuracy when a feature is used in a split; an output of \xgboost) in the $grz$ model, we identify the top 5 features bringing the greatest improvement: \texttt{mask} (see Equation~\ref{eq:feat_mask}), \texttt{delta\_dchisq}(EXP), \texttt{delta\_dchisq}(REX), \texttt{delta\_dchisq}(DEV) (improvement in the fit by substituting the PSF profile with EXP, REX, and DEV profiles, respectively), and $\texttt{Feat[ap\_grz]}(z, 5)$ (the flux ratios in $z$ between the 2\farcs0 and 3\farcs5 apertures). Interestingly, the feature importance of the flux ratios in $g$ and $r$ filters are a few times lower. This is probably due to the dramatic color differences between faint stars (predominantly M-dwarfs) and galaxies as illustrated in Figure~\ref{fig:bias}. Since the Galactic reddening in the COSMOS field is minimal and approximately constant, the colors of stars and galaxies approximate their intrinsic distributions. The extremely red $g-z$ and $r-z$ colors of M dwarfs means that $z$ is often the only filter with sufficient S/N to identifying them. Merging fluxes from all filters, as is done in the White model, introduces some level of noise from other filters with lower S/N.
+While the \xgboost\ models are generally not good at identifying faint stars, Figures~\ref{fig:roc_mag} and~\ref{fig:FPFN_mag} suggest that knowledge from individual filters can boost model performance. Between 24--25\,mag, the $grz$ model consistently identifies $>$10\% more stars than the White model at the same FPR.  {In Appendix~\ref{sec:feature_importance} we list the feature importance, defined as the average gain in accuracy when a feature is used in a split, of all the features in the three models. In the $grz$ model, the top 5 features that bring the greatest improvement are:} \texttt{mask} (see Equation~\ref{eq:feat_mask}), \texttt{delta\_dchisq}(EXP), \texttt{delta\_dchisq}(REX), \texttt{delta\_dchisq}(DEV) (improvement in the fit by substituting the PSF profile with EXP, REX, and DEV profiles, respectively), and $\texttt{Feat[ap\_grz]}(z, 5)$ (the flux ratios in $z$ between the 2\farcs0 and 3\farcs5 apertures). Interestingly, the feature importance of the flux ratios in $g$ and $r$ filters are a few times lower. This is probably due to the dramatic color differences between faint stars (predominantly M-dwarfs) and galaxies as illustrated in Figure~\ref{fig:bias}. Since the Galactic reddening in the COSMOS field is minimal and approximately constant, the colors of stars and galaxies approximate their intrinsic distributions. The extremely red $g-z$ and $r-z$ colors of M dwarfs means that $z$ is often the only filter with sufficient S/N to identifying them. Merging fluxes from all filters, as is done in the White model, introduces some level of noise from other filters with lower S/N.
 
 In conclusion, when photometry is available in all bands, including features based on the aperture flux in individual filters improves model performance. In this ideal situation, the $grz$ model (three filters) is always optimal, and the Hybrid model (effectively two broad-band filters) always outperforms the White model (all filters merged).
 
@@ -785,7 +789,7 @@ In the entire LS dataset where the source distributions are not subject to the s
 \subsubsection{Missing Filters}
 Given the importance of aperture flux ratios in the red filters, we test the models on a subset of sources with both the $i$ and $z$ filters missing and list the results in Table~\ref{tab:test_no_iz}. In the absence of $i$ and $z$ filters, the performance of all models degrades, especially for the $grz$ model. The Hybrid model has similar performance as the White model in terms of FoM and accuracy, while the $grz$ model shows $\sim$20\% worse accuracy. By definition, when $z$-band data are missing, values for all $\texttt{Feat[ap\_grz]}(z, k)$ are set to NaN. \xgboost\ handles sparsity in the input data by learning a default direction in each tree node from the training set. Then when a value is missing, the instance is classified in the default direction \citep{XGBoost_2016}. In the HST training set, only faint objects close to the $z$-band detection limit, which are predominantly galaxies, will be missing $\texttt{Feat[ap\_grz]}(z, k)$. On the test sets, the $grz$ model would therefore assign a systematically lower score whenever $\texttt{Feat[ap\_grz]}(z, k)=\mathrm{NaN}$, including bright stars that are simply not covered in $z$. The overall performance of the $grz$ model thus heavily depends on the fraction of objects missing $z$-band data. On the entire LS dataset, $\sim$$2\times10^7$ sources ($\sim$7\%) are not covered by $z$ filter, among which the $grz$ model will be highly biased. %Compared to the DESI dataset, a higher fraction of SDSS sources are missing $i$ and $z$ filters, and hence the accuracy of the $grz$ model downgrades even more dramatically on the SDSS dataset, as is shown in both Table~\ref{tab:test_no_iz} and Figure~\ref{fig:acc}.
 
-By construction, the Hybrid model has exactly the same features as the White model when either $gr$ or $iz$ filters are both missing. In Figure~\ref{fig:score_hist} we display the score distribution of the Hybrid model for Gaia stars, which has all-sky coverage up to $\sim$21\,mag. The fraction of stars with incomplete filter coverage should thus be representative of the entire LS dataset. The results again suggest a near-perfect classification accuracy for bright stars, even if a non-negligible fraction of stars are subject to missing filters. Among the Gaia stars with extremely low scores ($\le$0.1), almost half of them do not have either $gr$ or $iz$ data. Nevertheless, the decrease in TPR is mild. We therefore conclude that the Hybrid model is robust against missing filters.
+By construction, the Hybrid model has exactly the same features as the White model when either $gr$ or $iz$ filters are both missing. In Figure~\ref{fig:score_hist} we display the score distribution of the Hybrid model for Gaia stars, which has all-sky coverage up to $\sim$21\,mag. The fraction of stars with incomplete filter coverage should thus be representative of the entire LS dataset. The results again suggest a near-perfect classification accuracy for bright stars, even if a non-negligible fraction of stars are subject to missing filters. Among the Gaia stars with extremely low scores ($\le$0.1), almost half of them do not have either $gr$ or $iz$ data. Nevertheless, the decrease in TPR is mild. We therefore conclude that the Hybrid model is robust against missing filters. In the published catalog, we adopt scores from the Hybrid model.
 
 \begin{deluxetable*}{cccccc}[h]
 \tablehead{
@@ -811,24 +815,38 @@ By construction, the Hybrid model has exactly the same features as the White mod
     \label{fig:score_hist}
 \end{figure*}
 
-\subsubsection{Shallow Fields}
+\subsubsection{Shallow Fields {and Seeing Variation}}
 
-\begin{figure*}[h]
+\begin{figure*}
     \centering
     \includegraphics[width=0.83\linewidth]{Score_Maglim.pdf}
     \caption{Box plots of model scores showing how the Hybrid model downgrades for fainter sources (16--23\,mag; from left to right) in different fields with a variety of 5-$\sigma$ detection limits (23--26\,mag; from red to blue colors) in LS. Each box presents the distribution of scores for a group of DESI stars (upper panel) and galaxies (lower panel) within a bin of certain magnitude and detection limit in $r$. All the bin sizes are 1\,mag$\times$1\,mag. All bins contain more than 500 objects. The horizontal line inside the box marks the median. The upper and lower edges of each box correspond to the 25th and 75th percentiles of the scores, and the whiskers extend to the 10th and 90th percentiles. We note that the lower panel is zoomed in, and the minor ticks in both panels correspond to a same score interval of 0.025. Many stars near the detection limit are misclassified with a score below 0.5, the dashed horizontal line.}
     \label{fig:maglim}
 \end{figure*}
 
+{
+\begin{figure*}
+    \centering
+    \includegraphics[width=0.83\linewidth]{Score_Seeing.pdf}
+    \caption{Similar as Figure~\ref{fig:maglim}, but displaying how the Hybrid model performs in different fields with a variety of the seeing (measured as the PSF size in $r$) in LS. To alleviate the correlation between the seeing and the limiting magnitude, in this plot we only show sources in the fields where the 5-$\sigma$ detection limits in $r$ are between 24.5 and 25.5\,mag.}
+    \label{fig:seeing}
+\end{figure*}
+}
+
 The CV results in the COSMOS field have revealed that faint stars near the detection limit are systematically misclassified as galaxies by the \xgboost\ models. This is acceptable since the marginally detected targets in the deepest LS fields (5-$\sigma$ detection limits in $r\gtrsim25$\,mag), including the COSMOS field, should be predominantly galaxies, with a stellar fraction no more than a few percent (see Figure~\ref{fig:bias}). However, the survey depth is highly non-uniform across the entire footprint, due to (i) variable observing conditions (e.g., the telescope aperture, seeing, airmass), and (ii) a different total number of visits for each location within the survey footprint. It is worth testing whether low-S/N targets in shallower fields, among which the stellar fraction is not negligible, suffer the same systematics.
+
+Additionally, as the LS were conducted by telescopes at multiple sites, the seeings also vary significantly across the sky, affecting the PSF, i.e., the flux distribution across aperture sizes. As a result, our model, trained specifically on sources with a nearly constant seeing ~1'', is likely suboptimal in regions where seeings are much worse. A bad seeing also aggravates the stellar blending. 
+
 
 In Figure~\ref{fig:maglim}, we present box plots showing the distribution of scores among DESI stars and galaxies of different brightness in fields with different detection limits. The score is generated by the Hybrid model. From left to right, we show the distribution of model scores for DESI test set sources in 4 bins with LS 5$\sigma$ detection limits ranging from $r = 22.5$ to $26.5$\,mag. These four bins, each 1\,mag wide, cover $\sim$99.9\% of the targets in the DESI test set. 
 
-An obvious trend is that more objects (both stars and galaxies) are assigned a score closer to 0.5 in fainter bins, indicating increasing ambiguity in classification. The only exception is that some bright galaxies ($r\le16$\,mag) have scores between 0.05 and 0.1. Most of these galaxies are highly extended, and \texttt{Tractor} splits the galaxy into many sources (from both the nucleus and the blobs in the outskirts). The scores reported here are for only the nuclei leading to slightly higher scores than a typical bright galaxy.
+An obvious trend is that more objects (both stars and galaxies) are assigned a score closer to 0.5 in fainter bins, indicating increasing ambiguity in classification. {The only exception is that many bright galaxies ($r\le16$\,mag) have scores between 0.05 and 0.1, leading to a larger spread of the galaxy scores in the first magnitude bin of Figure~\ref{fig:maglim}.} Most of these galaxies are {either} highly extended {or has a bright unresolved nucleus, such that} \texttt{Tractor} splits the galaxy into {multiple sources}. The scores reported here are for only the nuclei leading to slightly higher scores than a typical bright galaxy. {Despite the larger average scores, we do not see a drop in the FPR in classifying the brightest galaxies when adopting a classification threshold of 0.5.}
 
 In each brightness bin, the score of all DESI galaxies and stars depends largely on the detection limit. In shallower fields, as the S/N is generally lower, both stars and galaxies receive a score closer to 0.5. This indicates that while the star--galaxy separation becomes trickier, decreasing the S/N does not bias our model towards lower scores, and low S/N galaxies are clearly receiving higher scores. 
 
-Consequently, we conclude there is no evidence for any systematics that will bias the fidelity of the Hybrid model as the detection limit varies. In the published catalog, we adopt scores from the Hybrid model.
+{Figure~\ref{fig:seeing} displays how the seeing impacts the score distribution. To eliminate the effect of the imaging depth, we only include sources in the bricks with a 5$\sigma$ detection limit of 23.5 -- 24.5\,mag in $r$. As expected, the model performance decreases as the seeing degrades for both stars and galaxies. This occurs due to a combination of suboptimal model parameters and more severe blending.}
+
+Consequently, we conclude there is no evidence for {significant} systematics that will bias the fidelity of the Hybrid model as the detection limit {or seeing} varies{, although the model parameters are likely suboptimal in the fields with seeings $\gg$ 1\arcsec}.
 
 \subsubsection{Stellar Density}\label{sec:density}
 \begin{figure*}
@@ -858,7 +876,7 @@ Alerts on newly detected variability in the public surveys will be distributed t
     \caption{The source density map of LS-PSC. The red boxes indicate the bricks containing sources labeled as \texttt{bailout}. The actual size of the bricks ($\sim$$0.25\degr\times0.25\degr$) is much smaller than the box size. The dash line marks the Galactic plane. The source density in the northern footprint (covered by BASS and MzLS) is significantly lower than that in the south (covered by DECam-based programs such as DECaLS and DES).}
     \label{fig:LS-PSC}
 \end{figure*}
-Our final data product, the LS Point Source Catalog (LS-PSC), includes 2,807,176,359 LS \dr{10} sources in the south footprint and 339,015,213 sources in the north footprint, for which we provide the scores from the Hybrid model. In Figure~\ref{fig:LS-PSC} we display the all-sky source density distribution. We exclude all DUP sources as well as sources with no valid detections, as illustrated in Section~\ref{sec:data}, when we define the training and test sets. In addition, as a known issue of \dr{10}, source extraction failed on a small portion of bricks (known as \texttt{BAILOUT} regions; see Figure~\ref{fig:LS-PSC} for their locations). In Appendix~\ref{sec:bailout} we describe how we have identified these \texttt{BAILOUT} bricks, from which we are able to retrieve 107,937 \dr{9} sources where there are no \dr{10} sources. In total, there are 3,146,299,509 LS sources with \xgboost\ classifications, making this the largest catalog of resolved--unresolved classifications that has ever been produced. Out of the 3 billion sources there are 9 objects detected in multiple filters, where as no aperture photometry is provided. By definition (see Equation~\ref{eq:score_hybrid}) they do not have a finite Hybrid score. These sources include (i) 1 bright, saturated galaxy nucleus; (ii) 2 galaxies at the detector edges; and (iii) 6 stars in highly saturated regions (bright stars and/or stellar clusters). We manually assign a score of 0 and 1 to the 3 galaxies and to the 6 stars, respectively.
+Our final data product, the LS Point Source Catalog (LS-PSC), includes 2,807,176,359 LS \dr{10} sources in the south footprint and 339,015,213 sources in the north footprint, for which we provide the scores from the Hybrid model. In Figure~\ref{fig:LS-PSC} we display the all-sky source density distribution. We exclude all DUP sources as well as sources with no valid detections, as illustrated in Section~\ref{sec:data}, when we define the training and test sets. In addition, as a known issue of \dr{10}, source extraction failed on a small portion of bricks (known as \texttt{BAILOUT} regions; see Figure~\ref{fig:LS-PSC} for their locations). In Appendix~\ref{sec:bailout} we describe how we have identified these \texttt{BAILOUT} bricks, from which we are able to retrieve 107,937 \dr{9} sources where there are no \dr{10} sources. In total, there are 3,146,299,509 LS sources with \xgboost\ classifications, making this the largest catalog of resolved--unresolved classifications that has ever been produced. Out of the 3 billion sources there are 9 objects detected in multiple filters, whereas no aperture photometry is provided. By definition (see Equation~\ref{eq:score_hybrid}) they do not have a finite Hybrid score. These sources include (i) 1 bright, saturated galaxy nucleus; (ii) 2 galaxies at the detector edges; and (iii) 6 stars in highly saturated regions (bright stars and/or stellar clusters). We manually assign a score of 0 and 1 to the 3 galaxies and to the 6 stars, respectively.
 
 We recommend 0.5 as the classification threshold, which turns out to be very close to the threshold of a 0.5\% FPR in the HST training set from the COSMOS field ($0.507\pm0.019$) for the Hybrid model we adopt. In Table~\ref{tab:thresh} we present the classification thresholds for a couple of brightness ranges, evaluated on the HST training set with CV, with which users may construct samples of point sources or resolved sources with customized purity and/or completeness. A caveat is that in fields where the stellar density is significantly higher than in the extragalactic COSMOS field (e.g., at lower Galactic latitudes), the TPR will be lower than the values reported in Table~\ref{tab:thresh}. However, as shown in Section~\ref{sec:density}, the FPR remains largely unaffected by stellar crowding.
 
@@ -915,7 +933,7 @@ LS-PSC is integrated into the real-time transient detection pipeline for LS4, wh
 \facility{Astro Data Lab, Gaia}
 
 \section*{Acknowledgement}
-We thank Chris Stubbs for fruitful discussions. We thank Robert Nikutta and Stephanie Juneau for the aid of accessing the LS \dr{10} catalog, and Dustin Lang for explaining some details in the LS data processing pipeline. We thank Micheal Stroh for the support in the Northwestern high-performance computing cluster Quest. C.L. and~A.A.M~are supported by DoE award \#DE-SC0025599.
+{We thank the anonymous referee for the constructive comments to improve the paper.} We thank Chris Stubbs for fruitful discussions. We thank Robert Nikutta and Stephanie Juneau for the aid of accessing the LS \dr{10} catalog, and Dustin Lang for explaining some details in the LS data processing pipeline. We thank Micheal Stroh for the support in the Northwestern high-performance computing cluster Quest. C.L. and~A.A.M~are supported by DoE award \#DE-SC0025599.
 
 % quest
 This research was supported in part through the computational resources and staff contributions provided for the Quest high performance computing facility at Northwestern University which is jointly supported by the Office of the Provost, the Office for Research, and Northwestern University Information Technology. 
@@ -952,6 +970,92 @@ The Legacy Surveys imaging of the DESI footprint is supported by the Director, O
 \bibliographystyle{aasjournal}
 
 \appendix
+
+\section{Feature Importance}\label{sec:feature_importance}
+
+In this section we report the feature importance for each \xgboost\ model, defined as the average gain in accuracy when a feature is used in a split. The results are displayed in Table~\ref{tab:feature_importance_white} (White model), Table~\ref{tab:feature_importance_grz} ($grz$ model), and Table~\ref{tab:feature_importance_hyb} (Hybrid model). Features are sorted by descending importance; those with equal importance are then sorted alphabetically. For the Hybrid model, we report the feature importance for both \xgboost\ models.
+
+{
+\begin{deluxetable}{lc}[h]\label{tab:feature_importance_white}
+\tabletypesize{\footnotesize}
+\tablehead{
+    \colhead{Name} & \colhead{White}
+}
+\tablecaption{The feature importance for the White model.}
+\startdata
+\texttt{mask} & $0.38 \pm 0.07$ \\
+\texttt{delta\_dchisq}(REX) & $0.218 \pm 0.025$ \\
+\texttt{delta\_dchisq}(EXP) & $0.118 \pm 0.013$ \\
+\texttt{delta\_dchisq}(DEV) & $0.056 \pm 0.006$ \\
+\texttt{apratio\_white}(2\farcs0, 3\farcs5) & $0.056 \pm 0.008$ \\
+\texttt{apratio\_white}(1\farcs5, 2\farcs0) & $0.033 \pm 0.003$ \\
+\texttt{apratio\_white}(5\farcs0, 7\farcs0) & $0.027 \pm 0.004$ \\
+\texttt{apratio\_white}(3\farcs5, 5\farcs0) & $0.026 \pm 0.002$ \\
+\texttt{delta\_dchisq}(SER) & $0.022 \pm 0.002$ \\
+\texttt{apratio\_white}(0\farcs5, 0\farcs75) & $0.020 \pm 0.002$ \\
+\texttt{apratio\_white}(1\farcs0, 1\farcs5) & $0.020 \pm 0.002$ \\
+\texttt{apratio\_white}(0\farcs75, 1\farcs0) & $0.019 \pm 0.002$ \\
+\enddata
+\end{deluxetable}
+
+\begin{deluxetable}{lc}[h]\label{tab:feature_importance_grz}
+\tabletypesize{\footnotesize}
+\tablehead{
+    \colhead{Name} & \colhead{$grz$}
+}
+\tablecaption{The feature importance for the $grz$ model.}
+\startdata
+\texttt{mask} & $0.54 \pm 0.03$ \\
+\texttt{delta\_dchisq}(EXP) & $0.099 \pm 0.006$ \\
+\texttt{delta\_dchisq}(REX) & $0.065 \pm 0.004$ \\
+\texttt{delta\_dchisq}(DEV) & $0.039 \pm 0.003$ \\
+\texttt{apratio\_z}(2\farcs0, 3\farcs5) & $0.0320 \pm 0.0025$ \\
+\texttt{delta\_dchisq}(SER) & $0.021 \pm 0.002$ \\
+\texttt{apratio\_z}(1\farcs0, 1\farcs5) & $0.0188 \pm 0.0014$ \\
+\texttt{apratio\_r}(0\farcs5, 0\farcs75) & $0.0185 \pm 0.0024$ \\
+\texttt{apratio\_z}(1\farcs5, 2\farcs0) & $0.0177 \pm 0.0012$ \\
+\texttt{apratio\_z}(5\farcs0, 7\farcs0) & $0.0134 \pm 0.0008$ \\
+\texttt{apratio\_r}(0\farcs75, 1\farcs0) & $0.0126 \pm 0.0021$ \\
+\texttt{apratio\_r}(2\farcs0, 3\farcs5) & $0.0124 \pm 0.0016$ \\
+\texttt{apratio\_z}(0\farcs75, 1\farcs0) & $0.0122 \pm 0.0007$ \\
+\texttt{apratio\_g}(0\farcs5, 0\farcs75) & $0.0109 \pm 0.0007$ \\
+\texttt{apratio\_z}(3\farcs5, 5\farcs0) & $0.0106 \pm 0.0009$ \\
+\texttt{apratio\_g}(1\farcs0, 1\farcs5) & $0.0099 \pm 0.0008$ \\
+\texttt{apratio\_z}(0\farcs5, 0\farcs75) & $0.0093 \pm 0.0007$ \\
+\texttt{apratio\_g}(0\farcs75, 1\farcs0) & $0.0088 \pm 0.0006$ \\
+\texttt{apratio\_g}(1\farcs5, 2\farcs0) & $0.0078 \pm 0.0005$ \\
+\texttt{apratio\_r}(3\farcs5, 5\farcs0) & $0.0074 \pm 0.0007$ \\
+\texttt{apratio\_r}(1\farcs5, 2\farcs0) & $0.0073 \pm 0.0005$ \\
+\texttt{apratio\_g}(2\farcs0, 3\farcs5) & $0.0072 \pm 0.0004$ \\
+\texttt{apratio\_r}(1\farcs0, 1\farcs5) & $0.0072 \pm 0.0005$ \\
+\texttt{apratio\_r}(5\farcs0, 7\farcs0) & $0.0064 \pm 0.0005$ \\
+\texttt{apratio\_g}(3\farcs5, 5\farcs0) & $0.0063 \pm 0.0004$ \\
+\texttt{apratio\_g}(5\farcs0, 7\farcs0) & $0.0062 \pm 0.0005$ \\
+\enddata
+\end{deluxetable}
+
+\begin{deluxetable}{lc|lc}\label{tab:feature_importance_hyb}
+\tabletypesize{\footnotesize}
+\tablehead{
+    \colhead{Name} & \colhead{Hybrid ($gr$)} &\colhead{Name} & \colhead{Hybrid ($iz$)}
+}
+\tablecaption{The feature importance for the Hybrid model.}
+\startdata
+\texttt{mask} & $0.52 \pm 0.07$ & \texttt{delta\_dchisq}(REX) & $0.315 \pm 0.034$ \\
+\texttt{delta\_dchisq}(REX) & $0.192 \pm 0.029$ & \texttt{mask} & $0.17 \pm 0.09$ \\
+\texttt{delta\_dchisq}(EXP) & $0.082 \pm 0.013$ & \texttt{delta\_dchisq}(EXP) & $0.136 \pm 0.013$ \\
+\texttt{delta\_dchisq}(DEV) & $0.050 \pm 0.007$ & \texttt{apratio\_iz}(2\farcs0, 3\farcs5) & $0.076 \pm 0.008$ \\
+\texttt{apratio\_gr}(2\farcs0, 3\farcs5) & $0.024 \pm 0.003$ & \texttt{delta\_dchisq}(DEV) & $0.054 \pm 0.008$ \\
+\texttt{delta\_dchisq}(SER) & $0.019 \pm 0.003$ & \texttt{apratio\_iz}(1\farcs5, 2\farcs0) & $0.050 \pm 0.007$ \\
+\texttt{apratio\_gr}(5\farcs0, 7\farcs0) & $0.019 \pm 0.003$ & \texttt{apratio\_iz}(5\farcs0, 7\farcs0) & $0.041 \pm 0.004$ \\
+\texttt{apratio\_gr}(0\farcs5, 0\farcs75) & $0.018 \pm 0.003$ & \texttt{apratio\_iz}(3\farcs5, 5\farcs0) & $0.036 \pm 0.003$ \\
+\texttt{apratio\_gr}(0\farcs75, 1\farcs0) & $0.018 \pm 0.003$ & \texttt{apratio\_iz}(0\farcs5, 0\farcs75) & $0.035 \pm 0.003$ \\
+\texttt{apratio\_gr}(1\farcs5, 2\farcs0) & $0.018 \pm 0.003$ &  \texttt{apratio\_iz}(1\farcs0, 1\farcs5) & $0.035 \pm 0.003$\\
+\texttt{apratio\_gr}(3\farcs5, 5\farcs0) & $0.018 \pm 0.003$ & \texttt{apratio\_iz}(0\farcs75, 1\farcs0) & $0.031 \pm 0.003$ \\
+\texttt{apratio\_gr}(1\farcs0, 1\farcs5) & $0.017 \pm 0.003$ & \texttt{delta\_dchisq}(SER) & $0.028 \pm 0.003$ \\
+\enddata
+\end{deluxetable}
+}
 
 \section{Handling \texttt{BAILOUT} Bricks in LS \dr{10}}\label{sec:bailout}
 One known issue of LS \dr{10} is that during source extraction, some bricks, typically those with exceptionally high source density, cannot be fully processed in a reasonable timescale. The pipeline ``bailed out'' of these bricks before they finished processing. As a result, many objects from these bricks were not included in the catalog. Sources successfully extracted from these regions have their \texttt{BAILOUT} flag set in the \texttt{MASKBITS} bitmask, with which we can identify the bailout fields. In total, we find 206 bricks with at least one source flagged as \texttt{BAILOUT}, totaling $\sim$$12.8\,\deg^2$, or $\sim$0.056\% of the \dr{10} footprint, although typically only part of the brick is bailed out. Therefore up to $\sim$$10^6$ sources might be missing in the LS \dr{10} catalog.
